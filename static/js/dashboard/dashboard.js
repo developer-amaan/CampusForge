@@ -1,695 +1,2163 @@
-/* ==========================================
+/* =========================================================
         CAMPUSFORGE DASHBOARD
-========================================== */
+        Complete Dashboard JavaScript
+========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    animateCounters();
+    /* =====================================================
+            BASIC ELEMENTS
+    ===================================================== */
 
-    animateProgressBars();
-
-    welcomeAnimation();
-
-});
+    const toast = document.getElementById("toast");
 
 
-/* ==========================================
-        ANIMATED COUNTERS
-========================================== */
+    /* =====================================================
+            TOAST SYSTEM
+    ===================================================== */
 
-function animateCounters(){
+    function showToast(message) {
 
-    const counters = document.querySelectorAll(".stat-card h3");
+        if (!toast) return;
 
-    counters.forEach(counter=>{
+        toast.textContent = message;
 
-        let target = parseInt(counter.innerText.replace(/\D/g,'')) || 0;
+        toast.classList.add("show");
 
-        let count = 0;
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 2500);
+    }
 
-        let increment = Math.ceil(target / 80);
 
-        let interval = setInterval(()=>{
+    /* =====================================================
+            ANIMATED COUNTERS
+    ===================================================== */
 
-            count += increment;
+    const counters = document.querySelectorAll(
+        ".stat-card h3"
+    );
 
-            if(count >= target){
+    counters.forEach(counter => {
 
-                count = target;
+        const target = parseInt(
+            counter.textContent.replace(/,/g, "")
+        );
 
-                clearInterval(interval);
+        if (isNaN(target)) return;
+
+        let current = 0;
+
+        const increment = Math.max(
+            1,
+            Math.ceil(target / 60)
+        );
+
+        const timer = setInterval(() => {
+
+            current += increment;
+
+            if (current >= target) {
+
+                current = target;
+
+                clearInterval(timer);
 
             }
 
-            if(counter.innerText.includes("#")){
+            counter.textContent =
+                current.toLocaleString();
 
-                counter.innerText = "#" + count;
-
-            }
-
-            else if(counter.innerText.includes("Day")){
-
-                counter.innerText = count;
-
-            }
-
-            else{
-
-                counter.innerText = count;
-
-            }
-
-        },20);
+        }, 20);
 
     });
 
-}
 
+    /* =====================================================
+            PROGRESS BAR ANIMATION
+    ===================================================== */
 
-/* ==========================================
-        PROGRESS BAR ANIMATION
-========================================== */
+    const progressBars =
+        document.querySelectorAll(
+            ".progress-fill, .xp-fill, .placement-fill"
+        );
 
-function animateProgressBars(){
+    progressBars.forEach(bar => {
 
-    const bars = document.querySelectorAll(".progress-fill,.xp-fill,.skill-bar div");
-
-    bars.forEach(bar=>{
-
-        const finalWidth = window.getComputedStyle(bar).width;
+        const finalWidth =
+            bar.style.width ||
+            getComputedStyle(bar).width;
 
         bar.style.width = "0";
 
-        setTimeout(()=>{
+        setTimeout(() => {
 
-            bar.style.transition="width 1.8s ease";
+            if (finalWidth.includes("%")) {
+                bar.style.width = finalWidth;
+            }
 
-            bar.style.width=finalWidth;
-
-        },400);
-
-    });
-
-}
-
-
-/* ==========================================
-        HERO ANIMATION
-========================================== */
-
-function welcomeAnimation(){
-
-    const hero=document.querySelector(".hero");
-
-    hero.style.opacity="0";
-
-    hero.style.transform="translateY(40px)";
-
-    setTimeout(()=>{
-
-        hero.style.transition="1s";
-
-        hero.style.opacity="1";
-
-        hero.style.transform="translateY(0)";
-
-    },200);
-
-}
-
-
-/* ==========================================
-        CARD HOVER EFFECT
-========================================== */
-
-const cards=document.querySelectorAll(".card");
-
-cards.forEach(card=>{
-
-    card.addEventListener("mousemove",(e)=>{
-
-        const rect=card.getBoundingClientRect();
-
-        const x=e.clientX-rect.left;
-
-        const y=e.clientY-rect.top;
-
-        card.style.background=`
-        radial-gradient(circle at ${x}px ${y}px,
-        rgba(108,99,255,.18),
-        rgba(255,255,255,.05) 55%)`;
+        }, 300);
 
     });
 
-    card.addEventListener("mouseleave",()=>{
 
-        card.style.background="rgba(255,255,255,.05)";
+    /* =====================================================
+            HERO ANIMATION
+    ===================================================== */
 
-    });
+    const hero = document.querySelector(".hero");
 
-});
+    if (hero) {
 
+        hero.style.opacity = "0";
+        hero.style.transform = "translateY(20px)";
 
-/* ==========================================
-        LEVEL CIRCLE PULSE
-========================================== */
+        setTimeout(() => {
 
-const level=document.querySelector(".level-circle");
+            hero.style.transition =
+                "all 0.7s ease";
 
-setInterval(()=>{
+            hero.style.opacity = "1";
+            hero.style.transform =
+                "translateY(0)";
 
-    level.animate([
-
-        {transform:"scale(1)"},
-
-        {transform:"scale(1.05)"},
-
-        {transform:"scale(1)"}
-
-    ],{
-
-        duration:1400
-
-    });
-
-},3000);
-
-/* ==========================================
-        DARK MODE
-========================================== */
-
-const themeBtn=document.getElementById("themeToggle");
-
-const body=document.body;
-
-if(localStorage.getItem("theme")==="light"){
-
-body.classList.add("light");
-
-themeBtn.innerHTML='<i class="fa-solid fa-sun"></i>';
-
-}
-
-themeBtn.addEventListener("click",()=>{
-
-body.classList.toggle("light");
-
-if(body.classList.contains("light")){
-
-themeBtn.innerHTML='<i class="fa-solid fa-sun"></i>';
-
-localStorage.setItem("theme","light");
-
-}
-
-else{
-
-themeBtn.innerHTML='<i class="fa-solid fa-moon"></i>';
-
-localStorage.setItem("theme","dark");
-
-}
-
-});
-
-
-/* ==========================================
-        NOTIFICATIONS
-========================================== */
-
-const notifyBtn=document.getElementById("notificationBtn");
-
-const panel=document.querySelector(".notification-panel");
-
-notifyBtn.addEventListener("click",(e)=>{
-
-e.stopPropagation();
-
-panel.classList.toggle("show");
-
-});
-
-document.addEventListener("click",()=>{
-
-panel.classList.remove("show");
-
-});
-
-
-/* ==========================================
-        LIVE SEARCH
-========================================== */
-
-const search=document.querySelector(".search-box input");
-
-search.addEventListener("keyup",()=>{
-
-const value=search.value.toLowerCase();
-
-document.querySelectorAll(".card").forEach(card=>{
-
-const text=card.innerText.toLowerCase();
-
-card.style.display=text.includes(value)?"block":"none";
-
-});
-
-});
-
-
-
-
-/* ==========================================
-        XP SYSTEM
-========================================== */
-
-let xp = parseInt(localStorage.getItem("xp")) || 2380;
-
-const xpText = document.querySelector(".xp-info strong");
-
-const xpFill = document.querySelector(".xp-fill");
-
-const toast = document.getElementById("toast");
-
-const missions = document.querySelectorAll(".mission-list li");
-
-missions.forEach((mission,index)=>{
-
-    const checkbox = mission.querySelector("input");
-
-    const saved = localStorage.getItem("mission"+index);
-
-    if(saved==="true"){
-
-        checkbox.checked=true;
-
-        mission.classList.add("completed");
+        }, 150);
 
     }
 
-    checkbox.addEventListener("change",()=>{
 
-        if(checkbox.checked){
+    /* =====================================================
+            CARD HOVER
+    ===================================================== */
 
-            mission.classList.add("completed");
+    const cards =
+        document.querySelectorAll(".card");
 
-            const reward=parseInt(mission.dataset.xp);
+    cards.forEach(card => {
 
-            xp += reward;
+        card.addEventListener("mouseenter", () => {
 
-            updateXP();
+            card.style.transform =
+                "translateY(-4px)";
 
-            showToast("⭐ +" + reward + " XP Earned!");
+        });
 
-            localStorage.setItem("mission"+index,true);
+        card.addEventListener("mouseleave", () => {
 
-        }
+            card.style.transform =
+                "translateY(0)";
 
-        else{
-
-            mission.classList.remove("completed");
-
-            localStorage.removeItem("mission"+index);
-
-        }
+        });
 
     });
 
-});
 
-function updateXP(){
+    /* =====================================================
+            LEVEL CIRCLE
+    ===================================================== */
 
-    xpText.innerText=xp+" XP";
+    const levelCircle =
+        document.querySelector(".level-circle");
 
-    const percent=(xp%3000)/30;
+    if (levelCircle) {
 
-    xpFill.style.width=percent+"%";
+        levelCircle.addEventListener(
+            "mouseenter",
+            () => {
 
-    localStorage.setItem("xp",xp);
-    checkLevel();
+                levelCircle.classList.add(
+                    "level-circle-pulse"
+                );
 
-}
+            }
+        );
 
-function showToast(message){
+        levelCircle.addEventListener(
+            "mouseleave",
+            () => {
 
-    toast.innerText=message;
+                levelCircle.classList.remove(
+                    "level-circle-pulse"
+                );
 
-    toast.classList.add("show");
+            }
+        );
 
-    setTimeout(()=>{
+    }
 
-        toast.classList.remove("show");
 
-    },2500);
+    /* =====================================================
+            DARK / LIGHT MODE
+    ===================================================== */
 
-}
+    const themeToggle =
+        document.getElementById("themeToggle");
 
-updateXP();
+    if (themeToggle) {
 
-/* ==========================================
-        ACHIEVEMENTS
-========================================== */
+        const savedTheme =
+            localStorage.getItem("theme");
 
-const popup=document.getElementById("achievementPopup");
-
-const popupText=document.getElementById("achievementText");
-
-function unlockAchievement(text){
-
-popupText.innerText=text;
-
-popup.classList.add("show");
-
-setTimeout(()=>{
-
-popup.classList.remove("show");
-
-},3500);
-
-}
-
-/* ==========================================
-        LEVEL SYSTEM
-========================================== */
-
-let currentLevel=15;
-
-function checkLevel(){
-
-const level=document.querySelector(".level-circle h1");
-
-if(xp>=3000){
-
-currentLevel++;
-
-xp=0;
-
-level.innerText=currentLevel;
-
-document.querySelector(".level-circle").classList.add("level-up");
-
-showToast("🎉 LEVEL UP!");
-
-unlockAchievement("Reached Level "+currentLevel);
-
-setTimeout(()=>{
-
-document.querySelector(".level-circle").classList.remove("level-up");
-
-},900);
-
-}
-
-}
-
-/* ==========================================
-        STREAK
-========================================== */
-
-let streak=parseInt(localStorage.getItem("streak"))||18;
-
-document.querySelector(".streak").innerHTML=
-
-`🔥 ${streak} Day Streak`;
-
-function increaseStreak(){
-
-streak++;
-
-localStorage.setItem("streak",streak);
-
-document.querySelector(".streak").innerHTML=
-
-`🔥 ${streak} Day Streak`;
-
-}
-
-/* ==========================================
-        HEATMAP
-========================================== */
-
-const boxes=document.querySelectorAll(".box");
-
-boxes.forEach(box=>{
-
-box.addEventListener("mouseenter",()=>{
-
-box.animate([
-
-{
-
-transform:"scale(1)"
-
-},
-
-{
-
-transform:"scale(1.35)"
-
-},
-
-{
-
-transform:"scale(1)"
-
-}
-
-],{
-
-duration:300
-
-});
-
-});
-
-});
-
-/* ==========================================
-        AI COACH
-========================================== */
-
-const tips=[
-
-"Practice one Medium LeetCode problem today.",
-
-"Push your latest project to GitHub.",
-
-"Improve your LinkedIn profile this week.",
-
-"Complete one Backend module today.",
-
-"Review your DSA notes before sleeping.",
-
-"Build a mini project this weekend.",
-
-"Contribute to an open-source repository."
-
-];
-
-const coach=document.querySelector(".coach-message p");
-
-setInterval(()=>{
-
-const random=Math.floor(Math.random()*tips.length);
-
-coach.innerText=tips[random];
-
-},8000);
-
-/* ==========================================
-        PROFILE MENU
-========================================== */
-
-const profile=document.getElementById("profileMenu");
-
-const dropdown=document.querySelector(".profile-dropdown");
-
-profile.addEventListener("click",(e)=>{
-
-e.stopPropagation();
-
-dropdown.classList.toggle("show");
-
-});
-
-document.addEventListener("click",()=>{
-
-dropdown.classList.remove("show");
-
-});
-
-/* ==========================================
-        SETTINGS
-========================================== */
-
-const settings=document.querySelector(".profile-dropdown div:nth-child(2)");
-
-const modal=document.getElementById("settingsModal");
-
-const closeBtn=document.getElementById("closeSettings");
-
-settings.addEventListener("click",()=>{
-
-modal.classList.add("show");
-
-});
-
-closeBtn.addEventListener("click",()=>{
-
-modal.classList.remove("show");
-
-});
-
-/* ==========================================
-        BADGE SYSTEM
-========================================== */
-
-let badges=JSON.parse(localStorage.getItem("badges"))||[];
-
-function earnBadge(name){
-
-if(badges.includes(name)) return;
-
-badges.push(name);
-
-localStorage.setItem("badges",JSON.stringify(badges));
-
-unlockAchievement("🏅 "+name);
-
-}
-
-/* ==========================================
-        SMART NOTIFICATIONS
-========================================== */
-
-const smartNotifications=[
-
-"🔥 Keep your streak alive today!",
-
-"📈 Your XP increased this week.",
-
-"🚀 Upload your latest project.",
-
-"🏆 You're close to the Top 10 leaderboard.",
-
-"💻 Solve today's coding challenge."
-
-];
-
-setInterval(()=>{
-
-const random=Math.floor(Math.random()*smartNotifications.length);
-
-showToast(smartNotifications[random]);
-
-},60000);
-
-/* ==========================================
-        XP HISTORY
-========================================== */
-
-let history=JSON.parse(localStorage.getItem("xpHistory"))||[];
-
-function saveXPHistory(){
-
-history.push({
-
-date:new Date().toLocaleDateString(),
-
-xp:xp
-
-});
-
-localStorage.setItem("xpHistory",JSON.stringify(history));
-
-}
-
-/* ==========================================
-        LOGOUT
-========================================== */
-
-document.querySelector(".logout-item").addEventListener("click",()=>{
-
-if(confirm("Are you sure you want to logout?")){
-
-localStorage.removeItem("theme");
-
-location.reload();
-
-}
-
-});
-
-/* ==========================================
-        ANALYTICS
-========================================== */
-
-function analytics(){
-
-console.log("Current XP:",xp);
-
-console.log("Level:",currentLevel);
-
-console.log("Badges:",badges.length);
-
-console.log("History:",history);
-
-}
-
-analytics();
-
-document.querySelectorAll(".sync-btn").forEach(button => {
-
-    button.addEventListener("click", function () {
-
-        const url = this.getAttribute("data-sync-url");
-
-        console.log("Sync URL:", url);
-
-        if (!url) {
-            console.error("Sync URL not found!");
-            return;
+        if (savedTheme === "light") {
+            document.body.classList.add("light");
         }
 
-        this.disabled = true;
+        themeToggle.addEventListener(
+            "click",
+            () => {
 
-        const icon = this.querySelector("i");
-        const text = this.querySelector("span");
+                document.body.classList.toggle(
+                    "light"
+                );
 
-        icon.classList.add("fa-spin");
-        text.textContent = "Syncing...";
+                const isLight =
+                    document.body.classList.contains(
+                        "light"
+                    );
 
-        window.location.href = url;
-    });
+                localStorage.setItem(
+                    "theme",
+                    isLight ? "light" : "dark"
+                );
 
-});
+            }
+        );
 
-/* ==========================================
-        MOBILE SIDEBAR
-========================================== */
+    }
 
-/* ==========================================
-        SIDEBAR MENU
-========================================== */
 
-document.addEventListener("DOMContentLoaded", () => {
+    /* =====================================================
+            NOTIFICATIONS
+    ===================================================== */
 
-    const menuToggle = document.getElementById("menuToggle");
-    const sidebar = document.getElementById("sidebar");
+    const notificationBtn =
+        document.getElementById(
+            "notificationBtn"
+        );
 
-    if (!menuToggle || !sidebar) {
-        console.error("Sidebar or menu button not found!");
+    const notificationPanel =
+        document.getElementById(
+            "notificationPanel"
+        );
+
+    if (
+        notificationBtn &&
+        notificationPanel
+    ) {
+
+        notificationBtn.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                notificationPanel.classList.toggle(
+                    "show"
+                );
+
+            }
+        );
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    !notificationPanel.contains(
+                        event.target
+                    ) &&
+                    event.target !== notificationBtn
+                ) {
+
+                    notificationPanel.classList.remove(
+                        "show"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            SEARCH
+    ===================================================== */
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+    if (searchInput) {
+
+        searchInput.addEventListener(
+            "input",
+            () => {
+
+                const query =
+                    searchInput.value
+                        .toLowerCase()
+                        .trim();
+
+                const searchableElements =
+                    document.querySelectorAll(
+                        ".card, .stat-card"
+                    );
+
+                searchableElements.forEach(
+                    element => {
+
+                        const text =
+                            element.textContent
+                                .toLowerCase();
+
+                        if (
+                            query === "" ||
+                            text.includes(query)
+                        ) {
+
+                            element.style.display =
+                                "";
+
+                        } else {
+
+                            element.style.display =
+                                "none";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            ACHIEVEMENT SYSTEM
+    ===================================================== */
+
+    window.unlockAchievement =
+        function (message) {
+
+            const popup =
+                document.getElementById(
+                    "achievementPopup"
+                );
+
+            const achievementText =
+                document.getElementById(
+                    "achievementText"
+                );
+
+            if (!popup) return;
+
+            if (achievementText) {
+
+                achievementText.textContent =
+                    message;
+
+            }
+
+            popup.classList.add("show");
+
+            setTimeout(() => {
+
+                popup.classList.remove(
+                    "show"
+                );
+
+            }, 3500);
+
+        };
+
+
+    /* =====================================================
+            XP + LEVEL SYSTEM
+    ===================================================== */
+
+    const XP_PER_LEVEL = 3000;
+
+    let xp =
+        parseInt(
+            localStorage.getItem("xp")
+        ) || 2380;
+
+    let currentLevel =
+        parseInt(
+            localStorage.getItem("level")
+        ) || 15;
+
+
+    const xpText =
+        document.querySelector(
+            ".xp-info strong"
+        );
+
+    const nextLevelText =
+        document.querySelectorAll(
+            ".xp-info strong"
+        )[1];
+
+    const xpFill =
+        document.querySelector(
+            ".xp-fill"
+        );
+
+    const xpPercentageText =
+        document.querySelector(
+            ".xp-text"
+        );
+
+    const levelElement =
+        document.querySelector(
+            ".level-circle h1"
+        );
+
+
+    function renderXP() {
+
+        if (xpText) {
+
+            xpText.textContent =
+                `${xp} XP`;
+
+        }
+
+
+        const xpRemaining =
+            XP_PER_LEVEL - xp;
+
+
+        if (nextLevelText) {
+
+            nextLevelText.textContent =
+                `${xpRemaining} XP`;
+
+        }
+
+
+        const percentage =
+            Math.min(
+                (xp / XP_PER_LEVEL) * 100,
+                100
+            );
+
+
+        if (xpFill) {
+
+            xpFill.style.width =
+                `${percentage}%`;
+
+        }
+
+
+        if (xpPercentageText) {
+
+            xpPercentageText.textContent =
+                `${Math.floor(percentage)}% completed to Level ${currentLevel + 1}`;
+
+        }
+
+
+        if (levelElement) {
+
+            levelElement.textContent =
+                currentLevel;
+
+        }
+
+
+        localStorage.setItem(
+            "xp",
+            xp
+        );
+
+        localStorage.setItem(
+            "level",
+            currentLevel
+        );
+
+    }
+
+
+    function checkLevel() {
+
+        let leveledUp = false;
+
+
+        while (xp >= XP_PER_LEVEL) {
+
+            xp -= XP_PER_LEVEL;
+
+            currentLevel++;
+
+            leveledUp = true;
+
+        }
+
+
+        if (leveledUp) {
+
+            if (levelCircle) {
+
+                levelCircle.classList.add(
+                    "level-up"
+                );
+
+                setTimeout(() => {
+
+                    levelCircle.classList.remove(
+                        "level-up"
+                    );
+
+                }, 900);
+
+            }
+
+
+            showToast(
+                `🎉 LEVEL ${currentLevel} UNLOCKED!`
+            );
+
+
+            if (
+                typeof unlockAchievement ===
+                "function"
+            ) {
+
+                unlockAchievement(
+                    `Reached Level ${currentLevel}`
+                );
+
+            }
+
+        }
+
+
+        renderXP();
+
+    }
+
+
+    function updateXP() {
+
+        checkLevel();
+
+    }
+
+
+    renderXP();
+
+
+    /* =====================================================
+            DAILY GOALS SYSTEM
+    ===================================================== */
+
+    const goalList =
+        document.getElementById(
+            "goalList"
+        );
+
+    const addGoalBtn =
+        document.getElementById(
+            "addGoalBtn"
+        );
+
+    const editGoalsBtn =
+        document.getElementById(
+            "editGoalsBtn"
+        );
+
+    const goalProgressText =
+        document.getElementById(
+            "goalProgressText"
+        );
+
+    const goalProgressPercentage =
+        document.getElementById(
+            "goalProgressPercentage"
+        );
+
+    const goalProgressFill =
+        document.getElementById(
+            "goalProgressFill"
+        );
+
+    const todayXPElement =
+        document.getElementById(
+            "todayXP"
+        );
+
+
+    /* =====================================================
+            GOAL XP SETTINGS
+    ===================================================== */
+
+    const DAILY_GOAL_XP_LIMIT = 200;
+
+    const GOAL_XP = {
+
+        Easy: 10,
+
+        Medium: 25,
+
+        Hard: 50,
+
+        Epic: 100
+
+    };
+
+
+    /* =====================================================
+            TODAY'S DATE
+    ===================================================== */
+
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+
+    const GOALS_STORAGE_KEY =
+        `campusforge_goals_${today}`;
+
+
+    let dailyGoals =
+        JSON.parse(
+            localStorage.getItem(
+                GOALS_STORAGE_KEY
+            )
+        ) || [];
+
+
+    /* =====================================================
+            SAVE GOALS
+    ===================================================== */
+
+    function saveDailyGoals() {
+
+        localStorage.setItem(
+            GOALS_STORAGE_KEY,
+            JSON.stringify(
+                dailyGoals
+            )
+        );
+
+    }
+
+
+    /* =====================================================
+            CALCULATE TODAY'S GOAL XP
+    ===================================================== */
+
+    function calculateTodayXP() {
+
+        return dailyGoals
+            .filter(goal => goal.completed)
+            .reduce(
+                (total, goal) =>
+                    total + goal.xp,
+                0
+            );
+
+    }
+
+
+    /* =====================================================
+            ESCAPE HTML
+    ===================================================== */
+
+    function escapeHTML(text) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent = text;
+
+        return div.innerHTML;
+
+    }
+
+
+    /* =====================================================
+            RENDER DAILY GOALS
+    ===================================================== */
+
+    function renderGoals() {
+
+        if (!goalList) return;
+
+
+        goalList.innerHTML = "";
+
+
+        /* ---------- Empty State ---------- */
+
+        if (
+            dailyGoals.length === 0
+        ) {
+
+            goalList.innerHTML = `
+
+                <li class="empty-goals">
+
+                    <div>
+
+                        <i class="fa-solid fa-bullseye"></i>
+
+                        <span>
+                            No goals added yet.
+                        </span>
+
+                    </div>
+
+                </li>
+
+            `;
+
+        }
+
+
+        /* ---------- Goals ---------- */
+
+        dailyGoals.forEach(
+            goal => {
+
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+
+                li.className =
+                    goal.completed
+                        ? "completed"
+                        : "";
+
+
+                li.dataset.id =
+                    goal.id;
+
+
+                li.innerHTML = `
+
+                        <input
+                            type="checkbox"
+                            class="goal-checkbox"
+                            ${goal.completed ? "checked disabled" : ""}
+                        >
+
+                        <div class="goal-content">
+
+                            <div class="goal-title">
+                                ${escapeHTML(goal.title)}
+                            </div>
+
+                            <div class="goal-meta">
+
+                                <span class="goal-category">
+                                    ${escapeHTML(goal.category)}
+                                </span>
+
+                                <span class="goal-difficulty ${goal.difficulty.toLowerCase()}">
+                                    ${goal.difficulty}
+                                </span>
+
+                                <span class="goal-time">
+                                    ${goal.estimatedTime} min
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="goal-xp">
+                            +${goal.xp} XP
+                        </div>
+
+                        <button
+                            type="button"
+                            class="goal-menu-btn"
+                            title="Goal options"
+                        >
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+
+                    `;
+
+
+                const checkbox =
+                    li.querySelector(
+                        ".goal-checkbox"
+                    );
+
+                const menuBtn =
+                    li.querySelector(".goal-menu-btn");
+
+                if (menuBtn) {
+
+                    menuBtn.addEventListener(
+                        "click",
+                        event => {
+
+                            event.stopPropagation();
+
+                            showGoalMenu(
+                                goal,
+                                menuBtn
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                if (checkbox) {
+
+                    checkbox.addEventListener(
+                        "change",
+                        () => {
+
+                            completeGoal(
+                                goal.id
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                goalList.appendChild(
+                    li
+                );
+
+            }
+        );
+
+
+        updateGoalProgress();
+
+    }
+
+/* =====================================================
+        GOAL OPTIONS MENU
+===================================================== */
+
+function showGoalMenu(goal, button) {
+
+    /* Remove existing menu */
+
+    const existingMenu =
+        document.querySelector(
+            ".goal-options-menu"
+        );
+
+    if (existingMenu) {
+
+        existingMenu.remove();
+
+    }
+
+
+    /* Completed goals */
+
+    if (goal.completed) {
+
+        showToast(
+            "🔒 Completed goals are locked."
+        );
+
         return;
+
     }
 
-    menuToggle.addEventListener("click", (event) => {
 
-        event.stopPropagation();
+    /* Create menu */
 
-        sidebar.classList.toggle("active");
+    const menu =
+        document.createElement("div");
 
-        console.log("Sidebar:", sidebar.classList.contains("active"));
+    menu.className =
+        "goal-options-menu";
 
-    });
+
+    menu.innerHTML = `
+
+        <button
+            type="button"
+            class="edit-goal-option"
+        >
+            <i class="fa-solid fa-pen"></i>
+            Edit
+        </button>
+
+        <button
+            type="button"
+            class="delete-goal-option"
+        >
+            <i class="fa-solid fa-trash"></i>
+            Delete
+        </button>
+
+    `;
+
+
+    document.body.appendChild(menu);
+
+
+    /* Position menu */
+
+    const rect =
+        button.getBoundingClientRect();
+
+    menu.style.top =
+        `${rect.bottom + window.scrollY + 5}px`;
+
+    menu.style.left =
+        `${rect.right + window.scrollX - 130}px`;
+
+
+    /* Edit */
+
+    const editBtn =
+        menu.querySelector(
+            ".edit-goal-option"
+        );
+
+    editBtn.addEventListener(
+        "click",
+        () => {
+
+            menu.remove();
+
+            editGoal(goal);
+
+        }
+    );
+
+
+    /* Delete */
+
+    const deleteBtn =
+        menu.querySelector(
+            ".delete-goal-option"
+        );
+
+    deleteBtn.addEventListener(
+        "click",
+        () => {
+
+            menu.remove();
+
+            deleteGoal(goal.id);
+
+        }
+    );
+
+
+    /* Close menu */
+
+    setTimeout(() => {
+
+        document.addEventListener(
+            "click",
+            function closeMenu(event) {
+
+                if (
+                    !menu.contains(
+                        event.target
+                    )
+                ) {
+
+                    menu.remove();
+
+                    document.removeEventListener(
+                        "click",
+                        closeMenu
+                    );
+
+                }
+
+            }
+        );
+
+    }, 0);
+
+}
+
+/* =====================================================
+        EDIT GOAL
+===================================================== */
+
+function editGoal(goal) {
+
+    const titleInput =
+        document.getElementById(
+            "goalTitle"
+        );
+
+    const categoryInput =
+        document.getElementById(
+            "goalCategory"
+        );
+
+    const difficultyInput =
+        document.getElementById(
+            "goalDifficulty"
+        );
+
+    const timeInput =
+        document.getElementById(
+            "goalTime"
+        );
+
+    const goalModalTitle =
+        document.getElementById(
+            "goalModalTitle"
+        );
+
+    const saveGoalBtn =
+        document.getElementById(
+            "saveGoalBtn"
+        );
+
+
+    if (!titleInput) return;
+
+
+    /* Fill form */
+
+    titleInput.value =
+        goal.title;
+
+    categoryInput.value =
+        goal.category;
+
+    difficultyInput.value =
+        goal.difficulty;
+
+    timeInput.value =
+        goal.estimatedTime;
+
+
+    /* Update XP preview */
+
+    const reward =
+        GOAL_XP[
+            goal.difficulty
+        ] || 0;
+
+    if (goalXPPreview) {
+
+        goalXPPreview.textContent =
+            `${reward} XP`;
+
+    }
+
+
+    /* Change modal title */
+
+    if (goalModalTitle) {
+
+        goalModalTitle.textContent =
+            "✏️ Edit Daily Goal";
+
+    }
+
+
+    if (saveGoalBtn) {
+
+        saveGoalBtn.innerHTML = `
+            <i class="fa-solid fa-check"></i>
+            Save Changes
+        `;
+
+    }
+
+
+    openGoalModal();
+
+
+    /* ---------- Temporary Edit State ---------- */
+
+    goalForm.dataset.editingId =
+        goal.id;
+
+}
+/* =====================================================
+        DELETE GOAL
+===================================================== */
+
+function deleteGoal(goalId) {
+
+    const goal =
+        dailyGoals.find(
+            goal =>
+                goal.id === goalId
+        );
+
+
+    if (!goal) return;
+
+
+    /* Completed goals cannot be deleted */
+
+    if (goal.completed) {
+
+        showToast(
+            "🔒 Completed goals cannot be deleted."
+        );
+
+        return;
+
+    }
+
+
+    const confirmed =
+        confirm(
+            `Delete "${goal.title}"?`
+        );
+
+
+    if (!confirmed) return;
+
+
+    dailyGoals =
+        dailyGoals.filter(
+            goal =>
+                goal.id !== goalId
+        );
+
+
+    saveDailyGoals();
+
+    renderGoals();
+
+
+    showToast(
+        "🗑️ Goal deleted."
+    );
+
+}
+
+
+    /* =====================================================
+            COMPLETE GOAL
+    ===================================================== */
+
+    function completeGoal(goalId) {
+
+        const goal =
+            dailyGoals.find(
+                goal =>
+                    goal.id === goalId
+            );
+
+
+        if (
+            !goal ||
+            goal.completed
+        ) {
+
+            return;
+
+        }
+
+
+        /* ---------- XP LIMIT ---------- */
+
+        const currentGoalXP =
+            calculateTodayXP();
+
+
+        if (
+            currentGoalXP +
+            goal.xp >
+            DAILY_GOAL_XP_LIMIT
+        ) {
+
+            showToast(
+                `⚠️ Daily goal XP limit is ${DAILY_GOAL_XP_LIMIT} XP`
+            );
+
+            renderGoals();
+
+            return;
+
+        }
+
+
+        /* ---------- Complete ---------- */
+
+        goal.completed = true;
+
+
+        /* ---------- Award XP ---------- */
+
+        xp += goal.xp;
+
+        updateXP();
+
+
+        /* ---------- Save ---------- */
+
+        saveDailyGoals();
+
+
+        /* ---------- Render ---------- */
+
+        renderGoals();
+
+
+        /* ---------- Toast ---------- */
+
+        showToast(
+            `⭐ +${goal.xp} XP Earned!`
+        );
+
+
+        /* ---------- Achievement ---------- */
+
+        if (
+            typeof unlockAchievement ===
+            "function"
+        ) {
+
+            unlockAchievement(
+                `Completed: ${goal.title}`
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+            UPDATE GOAL PROGRESS
+    ===================================================== */
+
+    function updateGoalProgress() {
+
+        const totalGoals =
+            dailyGoals.length;
+
+
+        const completedGoals =
+            dailyGoals.filter(
+                goal =>
+                    goal.completed
+            ).length;
+
+
+        let percentage = 0;
+
+
+        if (totalGoals > 0) {
+
+            percentage =
+                Math.round(
+                    (
+                        completedGoals /
+                        totalGoals
+                    ) * 100
+                );
+
+        }
+
+
+        if (goalProgressText) {
+
+            goalProgressText.textContent =
+                `${completedGoals} / ${totalGoals} Completed`;
+
+        }
+
+
+        if (
+            goalProgressPercentage
+        ) {
+
+            goalProgressPercentage.textContent =
+                `${percentage}%`;
+
+        }
+
+
+        if (goalProgressFill) {
+
+            goalProgressFill.style.width =
+                `${percentage}%`;
+
+        }
+
+
+        if (todayXPElement) {
+
+            todayXPElement.textContent =
+                calculateTodayXP();
+
+        }
+
+    }
+
+
+    /* =====================================================
+            INITIAL GOAL RENDER
+    ===================================================== */
+
+    renderGoals();
+
+
+    /* =====================================================
+            ADD GOAL BUTTON
+    ===================================================== */
+    /* =====================================================
+        GOAL MODAL
+===================================================== */
+
+const goalModal =
+    document.getElementById("goalModal");
+
+const closeGoalModal =
+    document.getElementById("closeGoalModal");
+
+const cancelGoalBtn =
+    document.getElementById("cancelGoalBtn");
+
+const goalForm =
+    document.getElementById("goalForm");
+
+const goalDifficulty =
+    document.getElementById("goalDifficulty");
+
+const goalXPPreview =
+    document.getElementById("goalXPPreview");
+
+
+/* ---------- Open Modal ---------- */
+
+function openGoalModal() {
+
+    if (!goalModal) return;
+
+    goalModal.classList.add("show");
+
+}
+
+
+/* ---------- Close Modal ---------- */
+
+function closeGoalModalFunction() {
+
+    if (!goalModal) return;
+
+    goalModal.classList.remove("show");
+
+}
+
+
+/* ---------- Add Goal Button ---------- */
+
+if (addGoalBtn) {
+
+    addGoalBtn.addEventListener(
+        "click",
+        () => {
+
+            openGoalModal();
+
+        }
+    );
+
+}
+
+
+/* ---------- Edit Button ---------- */
+
+if (editGoalsBtn) {
+
+    editGoalsBtn.addEventListener(
+        "click",
+        () => {
+
+            openGoalModal();
+
+        }
+    );
+
+}
+
+
+/* ---------- Close Buttons ---------- */
+
+if (closeGoalModal) {
+
+    closeGoalModal.addEventListener(
+        "click",
+        closeGoalModalFunction
+    );
+
+}
+
+
+if (cancelGoalBtn) {
+
+    cancelGoalBtn.addEventListener(
+        "click",
+        closeGoalModalFunction
+    );
+
+}
+
+
+/* ---------- Click Outside ---------- */
+
+if (goalModal) {
+
+    goalModal.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target === goalModal
+            ) {
+
+                closeGoalModalFunction();
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ---------- Escape Key ---------- */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Escape" &&
+            goalModal &&
+            goalModal.classList.contains("show")
+        ) {
+
+            closeGoalModalFunction();
+
+        }
+
+    }
+);
+
+
+/* ---------- XP Preview ---------- */
+/* =====================================================
+        CREATE DAILY GOAL
+===================================================== */
+
+if (goalForm) {
+
+    goalForm.addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
+
+
+            /* ---------- Get Form Values ---------- */
+
+            const titleInput =
+                document.getElementById(
+                    "goalTitle"
+                );
+
+            const categoryInput =
+                document.getElementById(
+                    "goalCategory"
+                );
+
+            const difficultyInput =
+                document.getElementById(
+                    "goalDifficulty"
+                );
+
+            const timeInput =
+                document.getElementById(
+                    "goalTime"
+                );
+
+
+            const title =
+                titleInput.value.trim();
+
+            const category =
+                categoryInput.value;
+
+            const difficulty =
+                difficultyInput.value;
+
+            const estimatedTime =
+                parseInt(
+                    timeInput.value
+                );
+
+
+            /* ---------- Validation ---------- */
+
+            if (!title) {
+
+                showToast(
+                    "⚠️ Please enter a goal."
+                );
+
+                titleInput.focus();
+
+                return;
+
+            }
+
+
+            if (!category) {
+
+                showToast(
+                    "⚠️ Please select a category."
+                );
+
+                categoryInput.focus();
+
+                return;
+
+            }
+
+
+            if (!difficulty) {
+
+                showToast(
+                    "⚠️ Please select difficulty."
+                );
+
+                difficultyInput.focus();
+
+                return;
+
+            }
+
+
+            /* ---------- Calculate XP ---------- */
+
+            const reward =
+                GOAL_XP[difficulty] || 0;
+
+
+            /* =================================================
+                    EDIT EXISTING GOAL
+            ================================================= */
+
+            const editingId =
+                goalForm.dataset.editingId;
+
+
+            if (editingId) {
+
+                const existingGoal =
+                    dailyGoals.find(
+                        goal =>
+                            goal.id ===
+                            Number(editingId)
+                    );
+
+
+                if (existingGoal) {
+
+                    existingGoal.title =
+                        title;
+
+                    existingGoal.category =
+                        category;
+
+                    existingGoal.difficulty =
+                        difficulty;
+                    /*-----------check XP Limit ---------------*/
+                    const otherGoalsXP =
+                        dailyGoals
+                            .filter(goal =>
+                                goal.id !== existingGoal.id &&
+                                goal.completed
+                            )
+                            .reduce(
+                                (total, goal) =>
+                                    total + goal.xp,
+                                0
+                            );
+
+                    if (
+                        otherGoalsXP + reward >
+                        DAILY_GOAL_XP_LIMIT
+                    ) {
+
+                        showToast(
+                            "⚠️ This change would exceed today's XP limit."
+                        );
+
+                        return;
+
+                    }
+                    /* ---------- Update XP ---------- */
+                    
+                    existingGoal.xp =
+                        reward;
+
+                    existingGoal.estimatedTime =
+                        estimatedTime;
+
+
+                    saveDailyGoals();
+
+                    renderGoals();
+
+                    goalForm.reset();
+
+                    delete goalForm.dataset.editingId;
+
+
+                    if (goalXPPreview) {
+
+                        goalXPPreview.textContent =
+                            "0 XP";
+
+                    }
+
+
+                    const goalModalTitle =
+                        document.getElementById(
+                            "goalModalTitle"
+                        );
+
+                    if (goalModalTitle) {
+
+                        goalModalTitle.textContent =
+                            "🎯 Create Daily Goal";
+
+                    }
+
+
+                    const saveGoalBtn =
+                        document.getElementById(
+                            "saveGoalBtn"
+                        );
+
+                    if (saveGoalBtn) {
+
+                        saveGoalBtn.innerHTML = `
+                            <i class="fa-solid fa-plus"></i>
+                            Add Goal
+                        `;
+
+                    }
+
+
+                    closeGoalModalFunction();
+
+                    showToast(
+                        "✅ Goal updated successfully!"
+                    );
+
+                    return;
+
+                }
+
+            }
+
+
+            /* ---------- Check Daily Limit ---------- */
+
+            const currentGoalXP =
+                calculateTodayXP();
+
+
+            if (
+                currentGoalXP + reward >
+                DAILY_GOAL_XP_LIMIT
+            ) {
+
+                showToast(
+                    `⚠️ You can earn only ${
+                        DAILY_GOAL_XP_LIMIT -
+                        currentGoalXP
+                    } more XP today.`
+                );
+
+                return;
+
+            }
+
+
+            /* ---------- Create Goal ---------- */
+
+            const newGoal = {
+
+                id:
+                    Date.now(),
+
+                title:
+                    title,
+
+                category:
+                    category,
+
+                difficulty:
+                    difficulty,
+
+                xp:
+                    reward,
+
+                estimatedTime:
+                    estimatedTime,
+
+                completed:
+                    false,
+
+                createdAt:
+                    new Date().toISOString(),
+
+                goalDate:
+                    today
+
+            };
+
+
+            /* ---------- Add to Array ---------- */
+
+            dailyGoals.push(
+                newGoal
+            );
+
+
+            /* ---------- Save ---------- */
+
+            saveDailyGoals();
+
+
+            /* ---------- Update UI ---------- */
+
+            renderGoals();
+
+
+            /* ---------- Reset Form ---------- */
+
+            goalForm.reset();
+
+
+            if (goalXPPreview) {
+
+                goalXPPreview.textContent =
+                    "0 XP";
+
+            }
+
+
+            /* ---------- Close Modal ---------- */
+
+            closeGoalModalFunction();
+
+
+            /* ---------- Success ---------- */
+
+            showToast(
+                `🎯 Goal added! +${reward} XP available`
+            );
+
+        }
+    );
+
+}
+
+
+
+    /* =====================================================
+            EDIT GOALS BUTTON
+    ===================================================== */
+
+    if (editGoalsBtn) {
+
+        editGoalsBtn.addEventListener(
+            "click",
+            () => {
+
+                showToast(
+                    "✏️ Goal editor coming next!"
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            STREAK
+    ===================================================== */
+
+    const streakElement =
+        document.querySelector(
+            ".streak"
+        );
+
+    if (streakElement) {
+
+        let streak =
+            parseInt(
+                localStorage.getItem(
+                    "streak"
+                )
+            ) || 1;
+
+        streakElement.textContent =
+            `🔥 ${streak} Day Streak`;
+
+    }
+
+
+    /* =====================================================
+            HEATMAP
+    ===================================================== */
+
+    const heatmapBoxes =
+        document.querySelectorAll(
+            ".heatmap .box"
+        );
+
+    heatmapBoxes.forEach(
+        box => {
+
+            box.addEventListener(
+                "click",
+                () => {
+
+                    box.classList.toggle(
+                        "active"
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+            AI CAREER COACH
+    ===================================================== */
+
+    const aiButton =
+        document.getElementById(
+            "aiCoachBtn"
+        );
+
+    const aiResponse =
+        document.getElementById(
+            "aiResponse"
+        );
+
+    if (
+        aiButton &&
+        aiResponse
+    ) {
+
+        aiButton.addEventListener(
+            "click",
+            () => {
+
+                aiResponse.textContent =
+                    "Based on your current progress, focus on DSA, projects and consistent daily practice.";
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            PROFILE / SETTINGS
+    ===================================================== */
+
+    const settingsBtn =
+        document.getElementById(
+            "settingsBtn"
+        );
+
+    const settingsModal =
+        document.getElementById(
+            "settingsModal"
+        );
+
+    const closeSettings =
+        document.getElementById(
+            "closeSettings"
+        );
+
+
+    if (
+        settingsBtn &&
+        settingsModal
+    ) {
+
+        settingsBtn.addEventListener(
+            "click",
+            () => {
+
+                settingsModal.classList.add(
+                    "show"
+                );
+
+            }
+        );
+
+    }
+
+
+    if (
+        closeSettings &&
+        settingsModal
+    ) {
+
+        closeSettings.addEventListener(
+            "click",
+            () => {
+
+                settingsModal.classList.remove(
+                    "show"
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            BADGES
+    ===================================================== */
+
+    const badgeElements =
+        document.querySelectorAll(
+            ".badge"
+        );
+
+    badgeElements.forEach(
+        badge => {
+
+            badge.addEventListener(
+                "click",
+                () => {
+
+                    showToast(
+                        "🏆 Badge unlocked!"
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+            SMART NOTIFICATION
+    ===================================================== */
+
+    setTimeout(() => {
+
+        if (
+            dailyGoals.length === 0
+        ) {
+
+            showToast(
+                "🎯 Create your first daily goal!"
+            );
+
+        }
+
+    }, 1500);
+
+
+    /* =====================================================
+            SYNC BUTTONS
+    ===================================================== */
+
+    const syncButtons =
+        document.querySelectorAll(
+            ".sync-btn"
+        );
+
+    syncButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    showToast(
+                        "🔄 Syncing..."
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+            XP HISTORY
+    ===================================================== */
+
+    const xpHistory =
+        document.getElementById(
+            "xpHistory"
+        );
+
+    if (xpHistory) {
+
+        const savedXPHistory =
+            JSON.parse(
+                localStorage.getItem(
+                    "xpHistory"
+                )
+            ) || [];
+
+        savedXPHistory
+            .slice(-10)
+            .reverse()
+            .forEach(
+                item => {
+
+                    const element =
+                        document.createElement(
+                            "div"
+                        );
+
+                    element.className =
+                        "xp-history-item";
+
+                    element.textContent =
+                        `${item.description} +${item.xp} XP`;
+
+                    xpHistory.appendChild(
+                        element
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* =====================================================
+            ANALYTICS
+    ===================================================== */
+
+    const analyticsCards =
+        document.querySelectorAll(
+            ".analytics-card"
+        );
+
+    analyticsCards.forEach(
+        card => {
+
+            card.addEventListener(
+                "click",
+                () => {
+
+                    card.classList.toggle(
+                        "active"
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+            MOBILE SIDEBAR
+    ===================================================== */
+
+    const menuToggle =
+        document.getElementById(
+            "menuToggle"
+        );
+
+    const sidebar =
+        document.getElementById(
+            "sidebar"
+        );
+
+
+    if (
+        menuToggle &&
+        sidebar
+    ) {
+
+        menuToggle.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                sidebar.classList.toggle(
+                    "active"
+                );
+
+            }
+        );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    window.innerWidth <= 992 &&
+                    sidebar.classList.contains(
+                        "active"
+                    ) &&
+                    !sidebar.contains(
+                        event.target
+                    ) &&
+                    event.target !== menuToggle
+                ) {
+
+                    sidebar.classList.remove(
+                        "active"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+            FINAL INITIALIZATION
+    ===================================================== */
+
+    renderXP();
+
+    renderGoals();
 
 });

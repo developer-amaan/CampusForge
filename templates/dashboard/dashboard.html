@@ -574,75 +574,89 @@
 ========================================= -->
 
 <div class="right-column">
-    <!-- =========================================
-        TODAY'S MISSION
+<!-- =========================================
+        TODAY'S GOALS
 ========================================= -->
 
 <div class="card mission-card">
 
-    <h2>🎯 Today's Mission</h2>
+    <!-- Header -->
+    <div class="mission-header">
 
+        <div>
+            <h2>🎯 Today's Goals</h2>
+            <p>Create goals and complete them to earn XP.</p>
+        </div>
+
+        <button class="edit-goals-btn" id="editGoalsBtn">
+            <i class="fa-solid fa-pen"></i>
+            Edit
+        </button>
+
+    </div>
+
+
+    <!-- Progress -->
     <div class="mission-progress">
 
         <div class="progress-info">
 
-            <span>4 / 5 Completed</span>
+            <span id="goalProgressText">
+                0 / 0 Completed
+            </span>
 
-            <span>80%</span>
+            <span id="goalProgressPercentage">
+                0%
+            </span>
 
         </div>
 
+
         <div class="progress-bar">
 
-            <div class="progress-fill" style="width:80%"></div>
+            <div
+                class="progress-fill"
+                id="goalProgressFill"
+                style="width:0%">
+            </div>
 
         </div>
 
     </div>
 
-    <ul class="mission-list">
 
-        <li data-xp="50">
+    <!-- Goals -->
+    <ul class="mission-list" id="goalList">
 
-            <input type="checkbox" checked>
-
-            Solve 2 LeetCode Problems
-
-        </li>
-
-        <li data-xp="40">
-
-            <input type="checkbox" checked>
-
-            Push Code to GitHub
-
-        </li>
-
-        <li data-xp="30">
-
-            <input type="checkbox" checked>
-
-            Read System Design
-
-        </li>
-
-        <li data-xp="20">
-
-            <input type="checkbox">
-
-            Complete JavaScript Lesson
-
-        </li>
-
-        <li data-xp="60">
-
-            <input type="checkbox" checked>
-
-            Deploy One Project
-
-        </li>
+        <!-- Goals will be created here dynamically -->
 
     </ul>
+
+
+    <!-- Add Goal -->
+    <button class="add-goal-btn" id="addGoalBtn">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Add Goal
+
+    </button>
+
+
+    <!-- Today's XP -->
+    <div class="reward-box">
+
+        <h3>Today's XP</h3>
+
+        <p>
+            <span id="todayXP">0</span> XP ⭐
+        </p>
+
+        <small>
+            Daily Goal Limit: 200 XP
+        </small>
+
+    </div>
 
 </div>
 
@@ -712,7 +726,223 @@
 
 <div id="toast"></div>
 
+<!-- =========================================
+        DAILY GOAL MODAL
+========================================= -->
 
+<div class="goal-modal" id="goalModal">
+
+    <div class="goal-modal-content">
+
+        <!-- Header -->
+
+        <div class="goal-modal-header">
+
+            <div>
+                <h2 id="goalModalTitle">
+                    🎯 Create Daily Goal
+                </h2>
+
+                <p>
+                    Set a goal and earn XP by completing it.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="close-goal-modal"
+                id="closeGoalModal"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <!-- Goal Form -->
+
+        <form id="goalForm">
+
+
+            <!-- Goal Title -->
+
+            <div class="goal-form-group">
+
+                <label for="goalTitle">
+                    Goal
+                </label>
+
+                <input
+                    type="text"
+                    id="goalTitle"
+                    placeholder="e.g. Solve 2 LeetCode Problems"
+                    maxlength="100"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Category -->
+
+            <div class="goal-form-group">
+                <label for="goalCategory">Category</label>
+
+                <input
+                    type="text"
+                    id="goalCategory"
+                    placeholder="e.g. DSA, Development, Contest"
+                    maxlength="30"
+                    required
+                >
+            </div>
+
+
+            <!-- Difficulty -->
+
+            <div class="goal-form-group">
+
+                <label for="goalDifficulty">
+                    Difficulty
+                </label>
+
+                <select
+                    id="goalDifficulty"
+                    required
+                >
+
+                    <option value="">
+                        Select difficulty
+                    </option>
+
+                    <option value="Easy">
+                        Easy — 10 XP
+                    </option>
+
+                    <option value="Medium">
+                        Medium — 25 XP
+                    </option>
+
+                    <option value="Hard">
+                        Hard — 50 XP
+                    </option>
+
+                    <option value="Epic">
+                        Epic — 100 XP
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Estimated Time -->
+
+            <div class="goal-form-group">
+
+                <label for="goalTime">
+                    Estimated Time
+                </label>
+
+                <select
+                    id="goalTime"
+                >
+
+                    <option value="15">
+                        15 minutes
+                    </option>
+
+                    <option value="30">
+                        30 minutes
+                    </option>
+
+                    <option value="60" selected>
+                        1 hour
+                    </option>
+
+                    <option value="90">
+                        1.5 hours
+                    </option>
+
+                    <option value="120">
+                        2 hours
+                    </option>
+
+                    <option value="180">
+                        3+ hours
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- XP Preview -->
+
+            <div class="xp-preview">
+
+                <div class="xp-preview-icon">
+                    ⚡
+                </div>
+
+                <div>
+
+                    <span>
+                        XP Reward
+                    </span>
+
+                    <strong id="goalXPPreview">
+                        0 XP
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- Daily Limit -->
+
+            <div class="goal-limit-info">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+                <span>
+                    You can earn up to
+                    <strong>200 XP</strong>
+                    from self-created goals each day.
+                </span>
+
+            </div>
+
+
+            <!-- Buttons -->
+
+            <div class="goal-form-actions">
+
+                <button
+                    type="button"
+                    class="cancel-goal-btn"
+                    id="cancelGoalBtn"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="save-goal-btn"
+                    id="saveGoalBtn"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Add Goal
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 <script src="{{ url_for('static', filename='js/dashboard/dashboard.js') }}"></script>
 
 </body>

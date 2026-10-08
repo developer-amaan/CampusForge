@@ -115,73 +115,62 @@ def login():
 
         email = request.form.get("email")
         password = request.form.get("password")
-        login_type = request.form.get(
-            "login_type",
-            "student"
-        )
+        login_type = request.form.get("login_type", "student")
+
+        print("\n========== LOGIN DEBUG ==========")
+        print("Email:", email)
+        print("Login Type:", login_type)
 
         # Find user
-        user = User.query.filter_by(
-            email=email
-        ).first()
+        user = User.query.filter_by(email=email).first()
+
+        print("User found:", user)
 
         if not user:
-            flash(
-                "Invalid email or password.",
-                "error"
-            )
+            print("❌ USER NOT FOUND")
+            flash("Invalid email or password.", "error")
             return redirect(url_for("login"))
 
         # Check password
-        if not bcrypt.check_password_hash(
+        password_correct = bcrypt.check_password_hash(
             user.password_hash,
             password
-        ):
-            flash(
-                "Invalid email or password.",
-                "error"
-            )
+        )
+
+        print("Password correct:", password_correct)
+        print("User role:", user.role)
+
+        if not password_correct:
+            print("❌ WRONG PASSWORD")
+            flash("Invalid email or password.", "error")
             return redirect(url_for("login"))
 
         # Check selected login type
-        if (
-            login_type == "student"
-            and user.role != "student"
-        ):
-            flash(
-                "Please use Admin Login for this account.",
-                "error"
-            )
+        if login_type == "student" and user.role != "student":
+            print("❌ LOGIN TYPE MISMATCH: Student selected")
+            flash("Please use Admin Login for this account.", "error")
             return redirect(url_for("login"))
 
-        if (
-            login_type == "admin"
-            and user.role != "admin"
-        ):
-            flash(
-                "Please use Student Login for this account.",
-                "error"
-            )
+        if login_type == "admin" and user.role != "admin":
+            print("❌ LOGIN TYPE MISMATCH: Admin selected")
+            flash("Please use Student Login for this account.", "error")
             return redirect(url_for("login"))
 
         # Create session
         session["user_id"] = user.id
 
+        print("✅ SESSION CREATED")
+        print("Session user_id:", session["user_id"])
+
         # Redirect according to role
         if user.role == "admin":
-            return redirect(
-                url_for("admin_dashboard")
-            )
+            print("➡️ Redirecting to ADMIN DASHBOARD")
+            return redirect(url_for("admin_dashboard"))
 
-        return redirect(
-            url_for("dashboard")
-        )
+        print("➡️ Redirecting to STUDENT DASHBOARD")
+        return redirect(url_for("dashboard"))
 
-    return render_template(
-        "auth/login.html"
-    )
-
-
+    return render_template("auth/login.html")
 # -------------------------
 # LOGOUT
 # -------------------------
@@ -414,7 +403,14 @@ def success():
 # =========================================================
 # ADMIN
 # =========================================================
+# @app.route("/debug/users")
+# def debug_users():
+#     users = User.query.all()
 
+#     for user in users:
+#         print(user.__dict__)
+
+#     return f"Total users: {len(users)}"
 # -------------------------
 # ADMIN DASHBOARD
 # -------------------------
