@@ -611,28 +611,67 @@ document.addEventListener("DOMContentLoaded", () => {
         Epic: 100
 
     };
+    // Flask API helper
+    async function goalsAPI(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                ...options.headers
+            },
+            ...options
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Something went wrong.");
+        }
+
+        return data;
+    }
+
+    // Convert backend fields to the format used by dashboard.js
+    function normalizeGoal(goal) {
+        return {
+            ...goal,
+            estimatedTime: goal.estimatedTime ?? goal.estimated_time ?? 0,
+            completed: Boolean(goal.completed)
+        };
+    }
 
 
     /* =====================================================
             TODAY'S DATE
     ===================================================== */
 
-    const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+    // Today's local date
+    const dateNow = new Date();
 
+    const today = [
+        dateNow.getFullYear(),
+        String(dateNow.getMonth() + 1).padStart(2, "0"),
+        String(dateNow.getDate()).padStart(2, "0")
+    ].join("-");
 
-    const GOALS_STORAGE_KEY =
-        `campusforge_goals_${today}`;
+    let dailyGoals = [];
 
+    async function fetchDailyGoals() {
+        try {
+            const data = await goalsAPI("/api/goals");
 
-    let dailyGoals =
-        JSON.parse(
-            localStorage.getItem(
-                GOALS_STORAGE_KEY
-            )
-        ) || [];
+            dailyGoals = (data.goals || []).map(normalizeGoal);
+
+            renderGoals();
+
+            if (todayXPElement) {
+                todayXPElement.textContent = data.todayXP ?? 0;
+            }
+        } catch (error) {
+            console.error("Failed to load daily goals:", error);
+            showToast(`⚠️ ${error.message}`);
+        }
+    }
 
 
     /* =====================================================
@@ -1097,148 +1136,90 @@ function editGoal(goal) {
         DELETE GOAL
 ===================================================== */
 
-function deleteGoal(goalId) {
 
-    const goal =
-        dailyGoals.find(
-            goal =>
-                goal.id === goalId
-        );
-
+async function deleteGoal(goalId) {
+    const goal = dailyGoals.find(
+        item => Number(item.id) === Number(goalId)
+    );
 
     if (!goal) return;
 
-
-    /* Completed goals cannot be deleted */
-
     if (goal.completed) {
-
-        showToast(
-            "🔒 Completed goals cannot be deleted."
-        );
-
+        showToast("🔒 Completed goals cannot be deleted.");
         return;
-
     }
 
+    if (!confirm(`Delete "${goal.title}"?`)) {
+        return;
+    }
 
-    const confirmed =
-        confirm(
-            `Delete "${goal.title}"?`
-        );
+    try {
+        await goalsAPI(`/api/goals/${goalId}`, {
+            method: "DELETE"
+        });
 
+        await fetchDailyGoals();
+        showToast("🗑️ Goal deleted successfully!");
 
-    if (!confirmed) return;
-
-
-    dailyGoals =
-        dailyGoals.filter(
-            goal =>
-                goal.id !== goalId
-        );
-
-
-    saveDailyGoals();
-
-    renderGoals();
-
-
-    showToast(
-        "🗑️ Goal deleted."
-    );
-
+    } catch (error) {
+        console.error("Goal delete failed:", error);
+        showToast(`⚠️ ${error.message}`);
+    }
 }
+
 
 
     /* =====================================================
             COMPLETE GOAL
     ===================================================== */
 
-    function completeGoal(goalId) {
+    
+async function completeGoal(goalId) {
+    const goal = dailyGoals.find(
+        item => Number(item.id) === Number(goalId)
+    );
 
-        const goal =
-            dailyGoals.find(
-                goal =>
-                    goal.id === goalId
-            );
+    if (!goal || goal.completed) return;
 
-
-        if (
-            !goal ||
-            goal.completed
-        ) {
-
-            return;
-
-        }
-
-
-        /* ---------- XP LIMIT ---------- */
-
-        const currentGoalXP =
-            calculateTodayXP();
-
-
-        if (
-            currentGoalXP +
-            goal.xp >
-            DAILY_GOAL_XP_LIMIT
-        ) {
-
-            showToast(
-                `⚠️ Daily goal XP limit is ${DAILY_GOAL_XP_LIMIT} XP`
-            );
-
-            renderGoals();
-
-            return;
-
-        }
-
-
-        /* ---------- Complete ---------- */
-
-        goal.completed = true;
-
-
-        /* ---------- Award XP ---------- */
-
-        xp += goal.xp;
-
-        updateXP();
-
-
-        /* ---------- Save ---------- */
-
-        saveDailyGoals();
-
-
-        /* ---------- Render ---------- */
-
-        renderGoals();
-
-
-        /* ---------- Toast ---------- */
-
-        showToast(
-            `⭐ +${goal.xp} XP Earned!`
+    try {
+        const data = await goalsAPI(
+            `/api/goals/${goalId}/complete`,
+            {
+                method: "POST",
+                body: JSON.stringify({})
+            }
         );
 
+        // Backend has awarded XP and saved completion.
+        await fetchDailyGoals();
 
-        /* ---------- Achievement ---------- */
+        // Sync dashboard XP only when the API returns total XP.
+        const totalXP = data.totalXP ?? data.total_xp;
 
-        if (
-            typeof unlockAchievement ===
-            "function"
-        ) {
+        if (typeof totalXP === "number") {
+            const XP_PER_LEVEL = 3000;
 
-            unlockAchievement(
-                `Completed: ${goal.title}`
-            );
+            xp = totalXP % XP_PER_LEVEL;
+            currentLevel = Math.floor(totalXP / XP_PER_LEVEL) + 1;
 
+            renderXP();
         }
 
+        showToast(`⭐ +${goal.xp} XP Earned!`);
+
+        if (typeof unlockAchievement === "function") {
+            unlockAchievement(`Completed: ${goal.title}`);
+        }
+
+    } catch (error) {
+        console.error("Goal completion failed:", error);
+        showToast(`⚠️ ${error.message}`);
+
+        // Restore checkbox state if the API request fails.
+        fetchDailyGoals();
     }
+}
+
 
 
     /* =====================================================
@@ -1466,322 +1447,105 @@ document.addEventListener(
         CREATE DAILY GOAL
 ===================================================== */
 
+
 if (goalForm) {
-
-    goalForm.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-
-            /* ---------- Get Form Values ---------- */
-
-            const titleInput =
-                document.getElementById(
-                    "goalTitle"
-                );
-
-            const categoryInput =
-                document.getElementById(
-                    "goalCategory"
-                );
-
-            const difficultyInput =
-                document.getElementById(
-                    "goalDifficulty"
-                );
-
-            const timeInput =
-                document.getElementById(
-                    "goalTime"
-                );
-
-
-            const title =
-                titleInput.value.trim();
-
-            const category =
-                categoryInput.value;
-
-            const difficulty =
-                difficultyInput.value;
-
-            const estimatedTime =
-                parseInt(
-                    timeInput.value
-                );
-
-
-            /* ---------- Validation ---------- */
-
-            if (!title) {
-
-                showToast(
-                    "⚠️ Please enter a goal."
-                );
-
-                titleInput.focus();
-
-                return;
-
-            }
-
-
-            if (!category) {
-
-                showToast(
-                    "⚠️ Please select a category."
-                );
-
-                categoryInput.focus();
-
-                return;
-
-            }
-
-
-            if (!difficulty) {
-
-                showToast(
-                    "⚠️ Please select difficulty."
-                );
-
-                difficultyInput.focus();
-
-                return;
-
-            }
-
-
-            /* ---------- Calculate XP ---------- */
-
-            const reward =
-                GOAL_XP[difficulty] || 0;
-
-
-            /* =================================================
-                    EDIT EXISTING GOAL
-            ================================================= */
-
-            const editingId =
-                goalForm.dataset.editingId;
-
-
-            if (editingId) {
-
-                const existingGoal =
-                    dailyGoals.find(
-                        goal =>
-                            goal.id ===
-                            Number(editingId)
-                    );
-
-
-                if (existingGoal) {
-
-                    existingGoal.title =
-                        title;
-
-                    existingGoal.category =
-                        category;
-
-                    existingGoal.difficulty =
-                        difficulty;
-                    /*-----------check XP Limit ---------------*/
-                    const otherGoalsXP =
-                        dailyGoals
-                            .filter(goal =>
-                                goal.id !== existingGoal.id &&
-                                goal.completed
-                            )
-                            .reduce(
-                                (total, goal) =>
-                                    total + goal.xp,
-                                0
-                            );
-
-                    if (
-                        otherGoalsXP + reward >
-                        DAILY_GOAL_XP_LIMIT
-                    ) {
-
-                        showToast(
-                            "⚠️ This change would exceed today's XP limit."
-                        );
-
-                        return;
-
-                    }
-                    /* ---------- Update XP ---------- */
-                    
-                    existingGoal.xp =
-                        reward;
-
-                    existingGoal.estimatedTime =
-                        estimatedTime;
-
-
-                    saveDailyGoals();
-
-                    renderGoals();
-
-                    goalForm.reset();
-
-                    delete goalForm.dataset.editingId;
-
-
-                    if (goalXPPreview) {
-
-                        goalXPPreview.textContent =
-                            "0 XP";
-
-                    }
-
-
-                    const goalModalTitle =
-                        document.getElementById(
-                            "goalModalTitle"
-                        );
-
-                    if (goalModalTitle) {
-
-                        goalModalTitle.textContent =
-                            "🎯 Create Daily Goal";
-
-                    }
-
-
-                    const saveGoalBtn =
-                        document.getElementById(
-                            "saveGoalBtn"
-                        );
-
-                    if (saveGoalBtn) {
-
-                        saveGoalBtn.innerHTML = `
-                            <i class="fa-solid fa-plus"></i>
-                            Add Goal
-                        `;
-
-                    }
-
-
-                    closeGoalModalFunction();
-
-                    showToast(
-                        "✅ Goal updated successfully!"
-                    );
-
-                    return;
-
-                }
-
-            }
-
-
-            /* ---------- Check Daily Limit ---------- */
-
-            const currentGoalXP =
-                calculateTodayXP();
-
-
-            if (
-                currentGoalXP + reward >
-                DAILY_GOAL_XP_LIMIT
-            ) {
-
-                showToast(
-                    `⚠️ You can earn only ${
-                        DAILY_GOAL_XP_LIMIT -
-                        currentGoalXP
-                    } more XP today.`
-                );
-
-                return;
-
-            }
-
-
-            /* ---------- Create Goal ---------- */
-
-            const newGoal = {
-
-                id:
-                    Date.now(),
-
-                title:
-                    title,
-
-                category:
-                    category,
-
-                difficulty:
-                    difficulty,
-
-                xp:
-                    reward,
-
-                estimatedTime:
-                    estimatedTime,
-
-                completed:
-                    false,
-
-                createdAt:
-                    new Date().toISOString(),
-
-                goalDate:
-                    today
-
+    goalForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const titleInput = document.getElementById("goalTitle");
+        const categoryInput = document.getElementById("goalCategory");
+        const difficultyInput = document.getElementById("goalDifficulty");
+        const timeInput = document.getElementById("goalTime");
+
+        const title = titleInput.value.trim();
+        const category = categoryInput.value;
+        const difficulty = difficultyInput.value;
+        const estimatedTime = parseInt(timeInput.value, 10) || 0;
+
+        // Validate form
+        if (!title) {
+            showToast("⚠️ Please enter a goal.");
+            titleInput.focus();
+            return;
+        }
+
+        if (!category) {
+            showToast("⚠️ Please select a category.");
+            categoryInput.focus();
+            return;
+        }
+
+        if (!difficulty || !GOAL_XP[difficulty]) {
+            showToast("⚠️ Please select a valid difficulty.");
+            difficultyInput.focus();
+            return;
+        }
+
+        const editingId = goalForm.dataset.editingId;
+
+        try {
+            const payload = {
+                title,
+                category,
+                difficulty,
+                estimatedTime
             };
 
+            if (editingId) {
+                // Update existing goal in database
+                await goalsAPI(`/api/goals/${editingId}`, {
+                    method: "PUT",
+                    body: JSON.stringify(payload)
+                });
 
-            /* ---------- Add to Array ---------- */
+                showToast("✅ Goal updated successfully!");
+            } else {
+                // Create new goal in database
+                await goalsAPI("/api/goals", {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
 
-            dailyGoals.push(
-                newGoal
-            );
-
-
-            /* ---------- Save ---------- */
-
-            saveDailyGoals();
-
-
-            /* ---------- Update UI ---------- */
-
-            renderGoals();
-
-
-            /* ---------- Reset Form ---------- */
-
-            goalForm.reset();
-
-
-            if (goalXPPreview) {
-
-                goalXPPreview.textContent =
-                    "0 XP";
-
+                showToast("🎯 Goal added successfully!");
             }
 
+            // Reload the latest database data
+            await fetchDailyGoals();
 
-            /* ---------- Close Modal ---------- */
+            // Reset form and editing state
+            goalForm.reset();
+            delete goalForm.dataset.editingId;
+
+            if (goalXPPreview) {
+                goalXPPreview.textContent = "0 XP";
+            }
+
+            const goalModalTitle =
+                document.getElementById("goalModalTitle");
+
+            if (goalModalTitle) {
+                goalModalTitle.textContent = "🎯 Create Daily Goal";
+            }
+
+            const saveGoalBtn =
+                document.getElementById("saveGoalBtn");
+
+            if (saveGoalBtn) {
+                saveGoalBtn.innerHTML = `
+                    <i class="fa-solid fa-plus"></i>
+                    Add Goal
+                `;
+            }
 
             closeGoalModalFunction();
 
-
-            /* ---------- Success ---------- */
-
-            showToast(
-                `🎯 Goal added! +${reward} XP available`
-            );
-
+        } catch (error) {
+            console.error("Goal save failed:", error);
+            showToast(`⚠️ ${error.message}`);
         }
-    );
-
+    });
 }
+
 
 
 
@@ -2157,7 +1921,6 @@ if (goalForm) {
     ===================================================== */
 
     renderXP();
-
-    renderGoals();
+    fetchDailyGoals();
 
 });

@@ -5,7 +5,8 @@ from flask import (
     redirect,
     url_for,
     flash,
-    session
+    session,
+    jsonify
 )
 
 from database.services.leetcode_service import (
@@ -49,6 +50,9 @@ from database.services.platforms.gfg_sync import (
 )
 from database.models.github_stats import GitHubStats
 from database.models.gfg_stats import GFGStats
+from datetime import date, datetime
+
+from database.models.daily_goal import DailyGoal
 # =========================================================
 # CREATE FLASK APPLICATION
 # =========================================================
@@ -1524,6 +1528,270 @@ def complete():
     return render_template(
         "onboarding/complete.html"
     )
+
+# =========================================================
+
+# =========================================================
+# DAILY GOALS API
+# =========================================================
+
+DAILY_GOAL_XP_LIMIT = 200
+
+GOAL_XP = {
+    "Easy": 10,
+    "Medium": 25,
+    "Hard": 50,
+    "Epic": 100
+}
+
+
+def goal_to_dict(goal):
+    return {
+        "id": goal.id,
+        "title": goal.title,
+        "category": goal.category,
+        "difficulty": goal.difficulty,
+        "xp": goal.xp,
+        "estimatedTime": goal.estimated_time,
+        "completed": goal.completed,
+        "goalDate": goal.goal_date.isoformat(),
+        "createdAt": (
+            goal.created_at.isoformat()
+            if goal.created_at else None
+        ),
+        "completedAt": (
+            goal.completed_at.isoformat()
+            if goal.completed_at else None
+        )
+    }
+
+
+def get_daily_goals_xp(user_id, goal_date):
+    goals = DailyGoal.query.filter_by(
+        user_id=user_id,
+        goal_date=goal_date,
+        completed=True
+    ).all()
+
+    return sum(goal.xp for goal in goals)
+
+
+# GET: Load goals for a date
+@app.route("/api/goals", methods=["GET"])
+def get_daily_goals():
+
+    if "user_id" not in session:
+        return jsonify({"error": "Please log in."}), 401
+
+    try:
+        goal_date = date.fromisoformat(
+            request.args.get(
+                "date",
+                date.today().isoformat()
+            )
+        )
+    except ValueError:
+        return jsonify({"error": "Invalid date."}), 400
+
+    goals = DailyGoal.query.filter_by(
+        user_id=session["user_id"],
+        goal_date=goal_date
+    ).order_by(DailyGoal.created_at.asc()).all()
+
+    return jsonify({
+        "goals": [goal_to_dict(goal) for goal in goals],
+        "todayXP": get_daily_goals_xp(
+            session["user_id"], goal_date
+        ),
+        "dailyLimit": DAILY_GOAL_XP_LIMIT
+    }), 200
+
+
+# POST: Create a goal
+@app.route("/api/goals", methods=["POST"])
+def create_daily_goal():
+
+    if "user_id" not in session:
+        return jsonify({"error": "Please log in."}), 401
+
+    data = request.get_json(silent=True) or {}
+
+    title = str(data.get("title", "")).strip()
+    category = str(data.get("category", "")).strip()
+    difficulty = str(data.get("difficulty", "")).strip()
+
+    if not title or not category or not difficulty:
+        return jsonify({
+            "error": "Title, category and difficulty are required."
+        }), 400
+
+    if len(title) > 100 or len(category) > 50:
+        return jsonify({
+            "error": "Title or category is too long."
+        }), 400
+
+    if difficulty not in GOAL_XP:
+        return jsonify({"error": "Invalid difficulty."}), 400
+
+    try:
+        estimated_time = int(data.get("estimatedTime", 60))
+        if estimated_time < 1 or estimated_time > 1440:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "Estimated time must be between 1 and 1440 minutes."
+        }), 400
+
+    goal = DailyGoal(
+        user_id=session["user_id"],
+        title=title,
+        category=category,
+        difficulty=difficulty,
+        xp=GOAL_XP[difficulty],
+        estimated_time=estimated_time,
+        completed=False,
+        goal_date=date.today()
+    )
+
+    db.session.add(goal)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Goal created.",
+        "goal": goal_to_dict(goal)
+    }), 201
+
+
+# PUT: Edit an uncompleted goal
+@app.route("/api/goals/<int:goal_id>", methods=["PUT"])
+def edit_daily_goal(goal_id):
+
+    if "user_id" not in session:
+        return jsonify({"error": "Please log in."}), 401
+
+    goal = DailyGoal.query.filter_by(
+        id=goal_id,
+        user_id=session["user_id"]
+    ).first_or_404()
+
+    if goal.completed:
+        return jsonify({
+            "error": "Completed goals cannot be edited."
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+
+    title = str(data.get("title", "")).strip()
+    category = str(data.get("category", "")).strip()
+    difficulty = str(data.get("difficulty", "")).strip()
+
+    if not title or not category or not difficulty:
+        return jsonify({
+            "error": "Title, category and difficulty are required."
+        }), 400
+
+    if len(title) > 100 or len(category) > 50:
+        return jsonify({"error": "Title or category is too long."}), 400
+
+    if difficulty not in GOAL_XP:
+        return jsonify({"error": "Invalid difficulty."}), 400
+
+    try:
+        estimated_time = int(data.get("estimatedTime", 60))
+        if estimated_time < 1 or estimated_time > 1440:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid estimated time."}), 400
+
+    goal.title = title
+    goal.category = category
+    goal.difficulty = difficulty
+    goal.xp = GOAL_XP[difficulty]
+    goal.estimated_time = estimated_time
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Goal updated.",
+        "goal": goal_to_dict(goal)
+    }), 200
+
+
+# DELETE: Delete an uncompleted goal
+@app.route("/api/goals/<int:goal_id>", methods=["DELETE"])
+def delete_daily_goal(goal_id):
+
+    if "user_id" not in session:
+        return jsonify({"error": "Please log in."}), 401
+
+    goal = DailyGoal.query.filter_by(
+        id=goal_id,
+        user_id=session["user_id"]
+    ).first_or_404()
+
+    if goal.completed:
+        return jsonify({
+            "error": "Completed goals cannot be deleted."
+        }), 400
+
+    db.session.delete(goal)
+    db.session.commit()
+
+    return jsonify({"message": "Goal deleted."}), 200
+
+
+# POST: Complete a goal and award XP once
+@app.route(
+    "/api/goals/<int:goal_id>/complete",
+    methods=["POST"]
+)
+def complete_daily_goal(goal_id):
+
+    if "user_id" not in session:
+        return jsonify({"error": "Please log in."}), 401
+
+    goal = DailyGoal.query.filter_by(
+        id=goal_id,
+        user_id=session["user_id"]
+    ).first_or_404()
+
+    if goal.completed:
+        return jsonify({
+            "error": "This goal is already completed."
+        }), 400
+
+    earned_xp = get_daily_goals_xp(
+        session["user_id"],
+        goal.goal_date
+    )
+
+    if earned_xp + goal.xp > DAILY_GOAL_XP_LIMIT:
+        return jsonify({
+            "error": "Daily goal XP limit reached.",
+            "todayXP": earned_xp,
+            "dailyLimit": DAILY_GOAL_XP_LIMIT
+        }), 400
+
+    user = User.query.get(session["user_id"])
+
+    if not user:
+        session.clear()
+        return jsonify({"error": "User not found."}), 401
+
+    goal.completed = True
+    goal.completed_at = datetime.utcnow()
+
+    # Add the earned XP to the student's database total.
+    user.total_xp = (user.total_xp or 0) + goal.xp
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Goal completed!",
+        "goal": goal_to_dict(goal),
+        "todayXP": earned_xp + goal.xp,
+        "totalXP": user.total_xp
+    }), 200
 
 
     
