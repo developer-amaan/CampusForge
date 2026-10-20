@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GD Arena | CampusForge</title>
+    <meta name="description"
+          content="Practice group discussions, improve communication skills, and prepare for placements with CampusForge GD Arena.">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/theme.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/gd/gd_arena.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+
+<div class="gd-app">
+
+    <!-- Top Navigation -->
+    <header class="gd-topbar">
+        <a href="{{ url_for('dashboard') }}" class="gd-brand">
+            <span class="gd-brand-icon">
+                <i class="fa-solid fa-comments"></i>
+            </span>
+            <span>
+                <strong>CampusForge</strong>
+                <small>GD ARENA</small>
+            </span>
+        </a>
+
+        <div class="gd-topbar-right">
+            <span class="gd-live-label">
+                <span class="live-dot"></span>
+                PRACTICE MODE
+            </span>
+
+            <a href="{{ url_for('dashboard') }}" class="gd-back-link">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Dashboard</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="gd-main">
+
+        <!-- Hero -->
+        <section class="gd-hero">
+            <div class="gd-hero-content">
+                <span class="gd-eyebrow">
+                    <i class="fa-solid fa-bolt"></i>
+                    YOUR COMMUNICATION LAB
+                </span>
+
+                <h1>Speak with confidence.<br>
+                    <span>Lead the discussion.</span>
+                </h1>
+
+                <p>
+                    Practice real-world group discussion topics, structure
+                    your arguments, and build the communication skills
+                    recruiters look for.
+                </p>
+
+                <div class="gd-hero-actions">
+                    <button class="gd-btn gd-btn-primary" id="exploreTopicsBtn">
+                        <i class="fa-solid fa-play"></i>
+                        Start Practicing
+                    </button>
+
+                    <button class="gd-btn gd-btn-secondary" id="randomTopicBtn">
+                        <i class="fa-solid fa-shuffle"></i>
+                        Surprise Me
+                    </button>
+                </div>
+
+                <div class="gd-hero-points">
+                    <span><i class="fa-solid fa-check"></i> Practice at your pace</span>
+                    <span><i class="fa-solid fa-check"></i> Track your progress</span>
+                </div>
+            </div>
+
+            <div class="gd-hero-visual" aria-hidden="true">
+                <div class="gd-orbit orbit-one"></div>
+                <div class="gd-orbit orbit-two"></div>
+
+                <div class="gd-visual-core">
+                    <i class="fa-solid fa-people-group"></i>
+                </div>
+
+                <div class="gd-float-card float-card-one">
+                    <i class="fa-solid fa-microphone"></i>
+                    <span>
+                        <strong>Speak clearly</strong>
+                        <small>Express your ideas</small>
+                    </span>
+                </div>
+
+                <div class="gd-float-card float-card-two">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>
+                        <strong>Think critically</strong>
+                        <small>Build strong arguments</small>
+                    </span>
+                </div>
+
+                <div class="gd-visual-tag">IDEATE · DISCUSS · LEAD</div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="gd-stats-grid" aria-label="Your practice statistics">
+            <article class="gd-stat">
+                <div class="gd-stat-icon purple">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <span class="gd-stat-label">Available Topics</span>
+                    <h2 id="availableTopicsCount">0</h2>
+                </div>
+            </article>
+
+            <article class="gd-stat">
+                <div class="gd-stat-icon blue">
+                    <i class="fa-solid fa-check-double"></i>
+                </div>
+                <div>
+                    <span class="gd-stat-label">Sessions Completed</span>
+                    <h2 id="completedSessionsCount">0</h2>
+                </div>
+            </article>
+
+            <article class="gd-stat">
+                <div class="gd-stat-icon green">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div>
+                    <span class="gd-stat-label">Practice Minutes</span>
+                    <h2 id="practiceMinutesCount">0</h2>
+                </div>
+            </article>
+
+            <article class="gd-stat">
+                <div class="gd-stat-icon orange">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <span class="gd-stat-label">Average Self-Rating</span>
+                    <h2 id="averageRating">—</h2>
+                </div>
+            </article>
+        </section>
+
+        <!-- Practice workspace -->
+        <section class="gd-workspace" id="practiceWorkspace" hidden>
+            <div class="gd-section-heading workspace-heading">
+                <div>
+                    <span class="gd-eyebrow">YOUR SESSION</span>
+                    <h2>Discussion workspace</h2>
+                    <p>Organize your thoughts before you speak.</p>
+                </div>
+
+                <button class="gd-icon-btn" id="closeWorkspaceBtn"
+                        aria-label="Close practice workspace">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="gd-workspace-grid">
+
+                <div class="gd-workspace-main">
+                    <div class="gd-active-topic">
+                        <div class="gd-topic-meta">
+                            <span class="gd-chip" id="activeTopicCategory">General</span>
+                            <span class="gd-chip difficulty-chip"
+                                  id="activeTopicDifficulty">Beginner</span>
+                        </div>
+
+                        <h3 id="activeTopicTitle">Choose a topic to begin</h3>
+                        <p id="activeTopicDescription">
+                            Your topic description will appear here.
+                        </p>
+
+                        <div class="gd-topic-question">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <div>
+                                <strong>Think about this</strong>
+                                <p id="activeTopicPrompt">
+                                    What is your position, and why?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gd-prep-section">
+                        <div class="gd-prep-title">
+                            <h3><i class="fa-solid fa-list-check"></i> Your speaking plan</h3>
+                            <span>Personal notes</span>
+                        </div>
+
+                        <label for="openingNotes">1. Opening statement</label>
+                        <textarea id="openingNotes"
+                                  placeholder="Introduce the topic and state your position..."
+                                  rows="3"></textarea>
+
+                        <label for="argumentNotes">2. Main arguments and examples</label>
+                        <textarea id="argumentNotes"
+                                  placeholder="Write 2–3 arguments, evidence, or real-world examples..."
+                                  rows="4"></textarea>
+
+                        <label for="conclusionNotes">3. Conclusion</label>
+                        <textarea id="conclusionNotes"
+                                  placeholder="Summarize your position or suggest a solution..."
+                                  rows="3"></textarea>
+                    </div>
+                </div>
+
+                <aside class="gd-workspace-sidebar">
+                    <div class="gd-timer-card">
+                        <span class="gd-panel-eyebrow">SESSION TIMER</span>
+                        <div class="gd-timer" id="timerDisplay" aria-live="off">
+                            00:00
+                        </div>
+                        <p id="timerStatus">Ready when you are</p>
+
+                        <div class="gd-timer-actions">
+                            <button class="gd-btn gd-btn-primary" id="timerStartBtn">
+                                <i class="fa-solid fa-play"></i> Start
+                            </button>
+                            <button class="gd-btn gd-btn-secondary" id="timerResetBtn">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+
+                        <div class="gd-timer-hint">
+                            <i class="fa-solid fa-circle-info"></i>
+                            The timer measures your practice time. It does not record audio.
+                        </div>
+                    </div>
+
+                    <div class="gd-structure-card">
+                        <span class="gd-panel-eyebrow">QUICK FRAMEWORK</span>
+
+                        <div class="gd-framework-step">
+                            <span>01</span>
+                            <div>
+                                <strong>Opening</strong>
+                                <p>Define the topic and share your view.</p>
+                            </div>
+                        </div>
+
+                        <div class="gd-framework-step">
+                            <span>02</span>
+                            <div>
+                                <strong>Arguments</strong>
+                                <p>Give reasons, evidence, and examples.</p>
+                            </div>
+                        </div>
+
+                        <div class="gd-framework-step">
+                            <span>03</span>
+                            <div>
+                                <strong>Engage</strong>
+                                <p>Consider other perspectives respectfully.</p>
+                            </div>
+                        </div>
+
+                        <div class="gd-framework-step">
+                            <span>04</span>
+                            <div>
+                                <strong>Conclusion</strong>
+                                <p>End with a balanced summary.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="gd-btn gd-btn-success gd-save-session"
+                            id="completeSessionBtn">
+                        <i class="fa-solid fa-check"></i>
+                        Complete Session
+                    </button>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Topics -->
+        <section class="gd-topics-section" id="topicsSection">
+            <div class="gd-section-heading">
+                <div>
+                    <span class="gd-eyebrow">PICK YOUR CHALLENGE</span>
+                    <h2>Explore GD topics</h2>
+                    <p>Choose a topic that challenges your thinking.</p>
+                </div>
+
+                <div class="gd-topic-count">
+                    <span id="visibleTopicsCount">0</span> topics
+                </div>
+            </div>
+
+            <div class="gd-topic-toolbar">
+                <div class="gd-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="topicSearch"
+                           placeholder="Search topics..."
+                           aria-label="Search discussion topics">
+                    <kbd>SEARCH</kbd>
+                </div>
+
+                <label class="gd-select-wrap">
+                    <span class="sr-only">Filter by difficulty</span>
+                    <select id="difficultyFilter">
+                        <option value="all">All difficulties</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="gd-category-filters" id="categoryFilters">
+                <button class="gd-filter-btn active" data-category="all">All Topics</button>
+                <button class="gd-filter-btn" data-category="Technology">Technology</button>
+                <button class="gd-filter-btn" data-category="Society">Society</button>
+                <button class="gd-filter-btn" data-category="Education">Education</button>
+                <button class="gd-filter-btn" data-category="Business">Business</button>
+                <button class="gd-filter-btn" data-category="Abstract">Abstract</button>
+                <button class="gd-filter-btn" data-category="Environment">Environment</button>
+            </div>
+
+            <div class="gd-topic-grid" id="topicGrid">
+                <!-- Topic cards are generated by gd_arena.js -->
+            </div>
+
+            <div class="gd-empty-state" id="emptyTopicsState" hidden>
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <h3>No topics found</h3>
+                <p>Try another keyword or change your filters.</p>
+                <button class="gd-btn gd-btn-secondary" id="clearFiltersBtn">
+                    Clear filters
+                </button>
+            </div>
+        </section>
+
+        <!-- Tips -->
+        <section class="gd-tips-section">
+            <div class="gd-section-heading">
+                <div>
+                    <span class="gd-eyebrow">BEFORE YOU BEGIN</span>
+                    <h2>What makes a strong GD participant?</h2>
+                    <p>Focus on the quality of your contribution, not just how much you speak.</p>
+                </div>
+            </div>
+
+            <div class="gd-tips-grid">
+                <article class="gd-tip-card">
+                    <span class="gd-tip-number">01</span>
+                    <i class="fa-solid fa-ear-listen"></i>
+                    <h3>Listen actively</h3>
+                    <p>Understand other viewpoints before responding. Avoid interrupting.</p>
+                </article>
+
+                <article class="gd-tip-card">
+                    <span class="gd-tip-number">02</span>
+                    <i class="fa-solid fa-comments"></i>
+                    <h3>Be structured</h3>
+                    <p>Make one clear point at a time and support it with a relevant example.</p>
+                </article>
+
+                <article class="gd-tip-card">
+                    <span class="gd-tip-number">03</span>
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <h3>Stay balanced</h3>
+                    <p>Consider benefits, risks, and opposing arguments fairly.</p>
+                </article>
+
+                <article class="gd-tip-card">
+                    <span class="gd-tip-number">04</span>
+                    <i class="fa-solid fa-handshake"></i>
+                    <h3>Build on ideas</h3>
+                    <p>Contribute constructively instead of trying to dominate the discussion.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- History -->
+        <section class="gd-history-section" id="historySection">
+            <div class="gd-section-heading">
+                <div>
+                    <span class="gd-eyebrow">YOUR JOURNEY</span>
+                    <h2>Recent practice sessions</h2>
+                    <p>Review your completed sessions and self-evaluations.</p>
+                </div>
+
+                <button class="gd-text-btn" id="clearHistoryBtn">
+                    <i class="fa-regular fa-trash-can"></i>
+                    Clear history
+                </button>
+            </div>
+
+            <div class="gd-history-list" id="historyList">
+                <!-- Session history is generated by JavaScript -->
+            </div>
+
+            <div class="gd-history-empty" id="emptyHistoryState">
+                <div class="gd-history-empty-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h3>Your progress starts here</h3>
+                <p>Complete your first practice session to see your history.</p>
+            </div>
+        </section>
+
+        <!-- Self evaluation dialog -->
+        <dialog class="gd-dialog" id="evaluationDialog">
+            <form method="dialog" id="evaluationForm">
+                <div class="gd-dialog-header">
+                    <div>
+                        <span class="gd-eyebrow">SESSION REFLECTION</span>
+                        <h2>How did you do?</h2>
+                    </div>
+                    <button class="gd-icon-btn" type="button"
+                            id="closeEvaluationBtn" aria-label="Close evaluation">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <p class="gd-dialog-subtitle" id="evaluationTopicName">
+                    Rate your practice session.
+                </p>
+
+                <fieldset class="gd-rating-fieldset">
+                    <legend>Rate your performance</legend>
+                    <div class="gd-rating-options">
+                        <label><input type="radio" name="rating" value="1" required><span>1</span><small>Poor</small></label>
+                        <label><input type="radio" name="rating" value="2"><span>2</span><small>Fair</small></label>
+                        <label><input type="radio" name="rating" value="3"><span>3</span><small>Good</small></label>
+                        <label><input type="radio" name="rating" value="4"><span>4</span><small>Great</small></label>
+                        <label><input type="radio" name="rating" value="5"><span>5</span><small>Excellent</small></label>
+                    </div>
+                </fieldset>
+
+                <label class="gd-dialog-label" for="reflectionNotes">
+                    What went well, and what will you improve?
+                </label>
+                <textarea id="reflectionNotes" rows="4"
+                          placeholder="Example: I gave good examples, but I need a stronger conclusion..."></textarea>
+
+                <div class="gd-dialog-actions">
+                    <button class="gd-btn gd-btn-secondary" type="button"
+                            id="cancelEvaluationBtn">Cancel</button>
+                    <button class="gd-btn gd-btn-primary" type="submit">
+                        <i class="fa-solid fa-check"></i>
+                        Save Session
+                    </button>
+                </div>
+            </form>
+        </dialog>
+
+        <div class="gd-toast" id="gdToast" role="status" aria-live="polite"></div>
+
+    </main>
+
+    <footer class="gd-footer">
+        <span>CampusForge <span class="gd-footer-separator">/</span> GD Arena</span>
+        <span>Practice thoughtfully. Improve consistently.</span>
+    </footer>
+</div>
+
+<script src="{{ url_for('static', filename='js/gd/gd_arena.js') }}" defer></script>
+</body>
+</html>

@@ -57,6 +57,10 @@
                         <i class="fa-solid fa-folder-open"></i>
                         <span>Projects</span>
                     </li>
+                    <li onclick="window.location.href='{{ url_for('hackathons') }}'">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Hackathon Arena</span>
+                    </li>
 
                     <li>
                         <i class="fa-solid fa-ranking-star"></i>
@@ -314,8 +318,19 @@
     </div>
 
 
+    
     <!-- GD Rounds -->
-    <div class="stat-card">
+    <div
+        class="stat-card gd-stat-card"
+        role="link"
+        tabindex="0"
+        aria-label="Open Group Discussion Arena"
+        onclick="window.location.href='{{ url_for('gd_arena') }}'"
+        onkeydown="if(event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            window.location.href='{{ url_for('gd_arena') }}';
+        }"
+    >
         <i class="fa-solid fa-users"></i>
 
         <h3>0</h3>
@@ -328,7 +343,8 @@
         </div>
     </div>
 
-        <!-- Hackathons -->
+    
+    <!-- Hackathons -->
     <div class="stat-card">
         <i class="fa-solid fa-laptop-code"></i>
         <h3>0</h3>

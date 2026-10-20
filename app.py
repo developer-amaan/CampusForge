@@ -8,7 +8,7 @@ from flask import (
     session,
     jsonify
 )
-
+from datetime import datetime, timezone
 from database.services.leetcode_service import (
     sync_leetcode_account
 )
@@ -53,6 +53,13 @@ from database.models.gfg_stats import GFGStats
 from datetime import date, datetime
 
 from database.models.daily_goal import DailyGoal
+
+from database.models.hackathon import (
+    HackathonParticipation,
+    HackathonProof,
+    HackathonReview,
+)
+from database.models.gd_session import GDSession
 # =========================================================
 # CREATE FLASK APPLICATION
 # =========================================================
@@ -178,7 +185,163 @@ def login():
 # -------------------------
 # LOGOUT
 # -------------------------
+def get_logged_in_user_id():
+    """Return the authenticated user's ID, if available."""
+    user_id = session.get("user_id")
+    return user_id
 
+
+@app.route("/api/gd/sessions", methods=["GET"])
+def get_gd_sessions():
+    user_id = get_logged_in_user_id()
+
+    if not user_id:
+        return jsonify({"error": "Please log in first."}), 401
+
+    sessions = (
+        GDSession.query
+        .filter_by(user_id=user_id)
+        .order_by(GDSession.completed_at.desc())
+        .all()
+    )
+
+    return jsonify({
+        "sessions": [item.to_dict() for item in sessions]
+    }), 200
+
+
+@app.route("/api/gd/sessions", methods=["POST"])
+def save_gd_session():
+    user_id = get_logged_in_user_id()
+
+    if not user_id:
+        return jsonify({"error": "Please log in first."}), 401
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "A valid JSON object is required."}), 400
+
+    required_fields = [
+        "topicId",
+        "topicTitle",
+        "rating",
+    ]
+
+    missing_fields = [
+        field for field in required_fields
+        if field not in data or data[field] is None
+    ]
+
+    if missing_fields:
+        return jsonify({
+            "error": "Missing required fields.",
+            "fields": missing_fields
+        }), 400
+
+    try:
+        rating = int(data["rating"])
+        duration = int(data.get("durationSeconds", 0))
+        topic_id = str(data["topicId"]).strip()
+        topic_title = str(data["topicTitle"]).strip()
+
+        if not topic_id or not topic_title:
+            raise ValueError("Topic ID and title cannot be empty.")
+
+        if not 1 <= rating <= 5:
+            raise ValueError("Rating must be between 1 and 5.")
+
+        if duration < 0:
+            raise ValueError("Duration cannot be negative.")
+
+        if duration > 86400:
+            raise ValueError("Duration exceeds the allowed limit.")
+
+    except (ValueError, TypeError, OverflowError) as exc:
+        return jsonify({"error": str(exc) or "Invalid session data."}), 400
+
+    def optional_text(field, limit):
+        value = data.get(field, "")
+        if not isinstance(value, str):
+            raise ValueError(f"{field} must be text.")
+        value = value.strip()
+        if len(value) > limit:
+            raise ValueError(f"{field} is too long.")
+        return value or None
+
+    try:
+        category = optional_text("category", 50) or "General"
+        difficulty = optional_text("difficulty", 20) or "Beginner"
+        opening_notes = optional_text("openingNotes", 10000)
+        argument_notes = optional_text("argumentNotes", 10000)
+        conclusion_notes = optional_text("conclusionNotes", 10000)
+        reflection = optional_text("reflection", 5000)
+
+        completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        supplied_date = data.get("completedAt")
+
+        if supplied_date:
+            if not isinstance(supplied_date, str):
+                raise ValueError("completedAt must be an ISO date string.")
+
+            completed_at = datetime.fromisoformat(
+                supplied_date.replace("Z", "+00:00")
+            ).replace(tzinfo=None)
+
+        gd_session = GDSession(
+            user_id=user_id,
+            topic_id=topic_id,
+            topic_title=topic_title,
+            category=category,
+            difficulty=difficulty,
+            duration_seconds=duration,
+            opening_notes=opening_notes,
+            argument_notes=argument_notes,
+            conclusion_notes=conclusion_notes,
+            rating=rating,
+            reflection=reflection,
+            completed_at=completed_at,
+        )
+
+        db.session.add(gd_session)
+        db.session.commit()
+
+        return jsonify({
+            "message": "GD session saved successfully.",
+            "session": gd_session.to_dict()
+        }), 201
+
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 400
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to save GD session.")
+        return jsonify({"error": "Could not save the GD session."}), 500
+
+
+@app.route("/api/gd/sessions", methods=["DELETE"])
+def delete_gd_sessions():
+    user_id = get_logged_in_user_id()
+
+    if not user_id:
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        GDSession.query.filter_by(user_id=user_id).delete(
+            synchronize_session=False
+        )
+        db.session.commit()
+
+        return jsonify({
+            "message": "GD practice history cleared."
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to clear GD history.")
+        return jsonify({"error": "Could not clear GD history."}), 500
 @app.route("/logout")
 def logout():
 
@@ -564,6 +727,21 @@ def admin_students():
         student_project_counts=student_project_counts,
         student_coding_stats=student_coding_stats
     )
+
+@app.route("/gd")
+def gd_arena():
+    if "user_id" not in session:
+        flash("Please login to continue.", "error")
+        return redirect(url_for("login"))
+
+    user = db.session.get(User, session["user_id"])
+
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template("gd/gd_arena.html", user=user)
+
 
 @app.route("/projects")
 def projects():
@@ -1794,7 +1972,149 @@ def complete_daily_goal(goal_id):
     }), 200
 
 
-    
+# =========================================================
+# HACKATHON ARENA
+# =========================================================
+
+@app.route("/hackathons")
+def hackathons():
+    if "user_id" not in session:
+        flash("Please login to continue.", "error")
+        return redirect(url_for("login"))
+
+    user = db.session.get(User, session["user_id"])
+
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template("hackathons/hackathons.html", user=user)
+
+
+@app.route("/api/hackathons", methods=["GET"])
+def get_hackathons():
+    if "user_id" not in session:
+        return jsonify({"error": "Please login first."}), 401
+
+    records = (
+        HackathonParticipation.query
+        .filter_by(user_id=session["user_id"])
+        .order_by(HackathonParticipation.created_at.desc())
+        .all()
+    )
+
+    return jsonify({
+        "hackathons": [
+            {
+                "id": item.id,
+                "event_name": item.event_name,
+                "organizer": item.organizer,
+                "project_title": item.project_title,
+                "result": item.result,
+                "verification_status": item.verification_status,
+                "xp_awarded": item.xp_awarded,
+                "is_public": item.is_public,
+                "created_at": item.created_at.isoformat()
+            }
+            for item in records
+        ]
+    }), 200
+
+
+@app.route("/api/hackathons", methods=["POST"])
+def create_hackathon():
+    if "user_id" not in session:
+        return jsonify({"error": "Please login first."}), 401
+
+    data = request.get_json(silent=True) or {}
+
+    event_name = data.get("event_name", "").strip()
+
+    if not event_name:
+        return jsonify({"error": "Hackathon name is required."}), 400
+
+    if len(event_name) > 200:
+        return jsonify({"error": "Hackathon name must be 200 characters or fewer."}), 400
+
+    allowed_types = {"online", "offline", "hybrid"}
+    allowed_results = {"participated", "finalist", "runner_up", "winner"}
+
+    participation_type = data.get("participation_type", "online")
+    result = data.get("result", "participated")
+
+    if participation_type not in allowed_types:
+        return jsonify({"error": "Invalid participation type."}), 400
+
+    if result not in allowed_results:
+        return jsonify({"error": "Invalid hackathon result."}), 400
+
+    def parse_optional_date(value):
+        if not value:
+            return None
+        return date.fromisoformat(value)
+
+    try:
+        start_date = parse_optional_date(data.get("start_date"))
+        end_date = parse_optional_date(data.get("end_date"))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Please provide valid dates in YYYY-MM-DD format."}), 400
+
+    if start_date and end_date and end_date < start_date:
+        return jsonify({"error": "End date cannot be before start date."}), 400
+
+    def optional_text(key, limit=None):
+        value = data.get(key)
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError(f"{key} must be text.")
+        value = value.strip()
+        if limit and len(value) > limit:
+            raise ValueError(f"{key} must be {limit} characters or fewer.")
+        return value or None
+
+    try:
+        item = HackathonParticipation(
+            user_id=session["user_id"],
+            event_name=event_name,
+            organizer=optional_text("organizer", 200),
+            start_date=start_date,
+            end_date=end_date,
+            participation_type=participation_type,
+            team_name=optional_text("team_name", 150),
+            team_role=optional_text("team_role", 100),
+            project_title=optional_text("project_title", 200),
+            project_description=optional_text("project_description"),
+            tech_stack=optional_text("tech_stack"),
+            result=result,
+            github_url=optional_text("github_url", 500),
+            demo_url=optional_text("demo_url", 500),
+            video_url=optional_text("video_url", 500),
+            experience=optional_text("experience"),
+            challenges=optional_text("challenges"),
+            learnings=optional_text("learnings"),
+            is_public=bool(data.get("is_public", False)),
+            verification_status="pending",
+            xp_awarded=0
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    db.session.add(item)
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to save hackathon participation")
+        return jsonify({"error": "Could not save the hackathon. Please try again."}), 500
+
+    return jsonify({
+        "message": "Hackathon submitted for verification.",
+        "id": item.id,
+        "verification_status": item.verification_status,
+        "xp_awarded": item.xp_awarded
+    }), 201
 # =========================================================
 # RUN APPLICATION
 # =========================================================

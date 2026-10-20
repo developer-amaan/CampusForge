@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hackathon Arena | CampusForge</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/theme.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/hackathons/hackathons.css') }}">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+    <main class="hackathon-page">
+        <header class="hackathon-header">
+            <div>
+                <p class="eyebrow">CAMPUSFORGE / ACHIEVEMENTS</p>
+                <h1>Hackathon Arena</h1>
+                <p>Track your participation, showcase your projects, and submit proof of your achievements.</p>
+            </div>
+            <a class="back-link" href="{{ url_for('dashboard') }}">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+            </a>
+        </header>
+
+        <section class="hackathon-panel">
+            <h2><i class="fa-solid fa-plus-circle"></i> Add a Hackathon</h2>
+
+            <form id="hackathonForm">
+                <div class="form-grid">
+                    <label>
+                        Hackathon name *
+                        <input name="event_name" required maxlength="200"
+                               placeholder="e.g. Smart India Hackathon">
+                    </label>
+
+                    <label>
+                        Organizer
+                        <input name="organizer" maxlength="200"
+                               placeholder="Organizer name">
+                    </label>
+
+                    <label>
+                        Start date
+                        <input name="start_date" type="date">
+                    </label>
+
+                    <label>
+                        End date
+                        <input name="end_date" type="date">
+                    </label>
+
+                    <label>
+                        Participation mode
+                        <select name="participation_type">
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Result
+                        <select name="result">
+                            <option value="participated">Participated</option>
+                            <option value="finalist">Finalist</option>
+                            <option value="runner_up">Runner-up</option>
+                            <option value="winner">Winner</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Team name
+                        <input name="team_name" maxlength="150">
+                    </label>
+
+                    <label>
+                        Your role
+                        <input name="team_role" maxlength="100"
+                               placeholder="e.g. Backend Developer">
+                    </label>
+
+                    <label>
+                        Project title
+                        <input name="project_title" maxlength="200">
+                    </label>
+
+                    <label>
+                        Tech stack
+                        <input name="tech_stack"
+                               placeholder="Python, Flask, PostgreSQL">
+                    </label>
+
+                    <label>
+                        GitHub URL
+                        <input name="github_url" type="url" maxlength="500"
+                               placeholder="https://github.com/...">
+                    </label>
+
+                    <label>
+                        Demo URL
+                        <input name="demo_url" type="url" maxlength="500"
+                               placeholder="https://...">
+                    </label>
+
+                    <label class="full-width">
+                        Project description
+                        <textarea name="project_description" rows="3"></textarea>
+                    </label>
+
+                    <label class="full-width">
+                        Experience
+                        <textarea name="experience" rows="3"
+                                  placeholder="What did you build or experience?"></textarea>
+                    </label>
+
+                    <label class="full-width">
+                        Challenges
+                        <textarea name="challenges" rows="2"></textarea>
+                    </label>
+
+                    <label class="full-width">
+                        Key learnings
+                        <textarea name="learnings" rows="2"></textarea>
+                    </label>
+                </div>
+
+                <label class="visibility-option">
+                    <input type="checkbox" name="is_public">
+                    Make this achievement visible publicly
+                </label>
+
+                <p class="form-note">
+                    Your submission will remain pending until an admin verifies it.
+                    No XP is awarded at submission time.
+                </p>
+
+                <button type="submit" id="submitHackathon">
+                    Submit for verification
+                </button>
+                <p id="formMessage" role="status"></p>
+            </form>
+        </section>
+
+        <section class="hackathon-panel">
+            <h2><i class="fa-solid fa-list-check"></i> My Hackathons</h2>
+            <div id="hackathonList" aria-live="polite">
+                Loading your hackathons...
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/hackathons/hackathons.js') }}"></script>
+</body>
+</html>

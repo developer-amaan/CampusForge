@@ -6,3 +6,9 @@ from database.models.college import College
 from database.models.user_skill import UserSkill
 from database.models.gfg_stats import GFGStats
 from database.models.daily_goal import DailyGoal
+from database.models.hackathon import (
+    HackathonParticipation,
+    HackathonProof,
+    HackathonReview,
+)
+from database.models.gd_session import GDSession
